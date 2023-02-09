@@ -87,7 +87,7 @@ class TaackPlmTaskPanel(object):
         f.close()
         data = {"ajax": 'true'}
         f2 = open("fc_proto", 'rb')
-        r = self.po.taackIntranetSession.post(url=self.po.url + 'plmFreeCad/uploadProto', files={'proto.bin': f2}, data=data)
+        r = self.po.taackIntranetSession.post(url=self.po.url + 'plm/uploadProto', files={'proto.bin': f2}, data=data)
         f2.close()
 
         if r.json()["success"] == True:
