@@ -47,6 +47,8 @@ All linked files will be uploaded. There are 3 situations from here, for each fi
 * Either the file ID does exists on the server
  * The existing model will be updated
 
+![File ID](https://github.com/Taack/taack-plm-freecad/blob/main/sc-fileId.png)
+
 ### Download a previous version
 
 From your Intranet, click on PLM icon, then you will see a list of model.
