@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+
+  <name>Taack PLM</name>
+
+  <description>This workbench contains tools to interact with Taack Plm Intranet server app you can find under the https://github.com/Taack/plm  </description>
+
+  <version>2023.2.10</version>
+
+  <date>2023-02-10</date>
+
+  <maintainer email="adrien.guichard@citel.fr">Adrien GUICHARD</maintainer>
+
+  <license file="LICENSE">GPLv2</license>
+
+  <url branch="main" type="repository">https://github.com/Taack/taack-plm-freecad</url>
+
+  <url type="readme">https://github.com/Taack/taack-plm-freecad/raw/main/README.md</url>
+
+  <url type="discussion">https://forum.freecad.org/viewtopic.php?t=75937</url>
+
+  <icon>icons/logo_taack.svg</icon>
+
+  <content>
+    <workbench>
+      <classname>TaackPLMWorkbench</classname>
+      <subdirectory>./</subdirectory>
+    </workbench>
+  </content>
+
+</package>
