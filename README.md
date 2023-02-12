@@ -37,17 +37,11 @@ Once you are connected
 * click on the **Taack** icon
 * click on the **Accept** Button
 
-All linked files will be uploaded. There are 3 situations from here, for each file:
-* Either the file ID is empty, then:
-  * A file ID will be generated for you
+All linked files will be uploaded. There are 2 situations from here, for each file:
+* Either the file Uid does not exists on the server
   * The model will be uploaded as a new one
-  * You will be **prompted to save** the model
-* Either the file ID does not exists on the server
-  * The model will be uploaded as a new one
-* Either the file ID does exists on the server
- * The existing model will be updated
-
-![File ID](https://github.com/Taack/taack-plm-freecad/blob/main/sc-fileId.png)
+* Either the file Uid does exists on the server
+  * The existing model will be updated
 
 ### Download a previous version
 
@@ -77,5 +71,7 @@ Or links pointing to this model:
 ![See parent deps](https://github.com/Taack/taack-plm-freecad/blob/main/sc-pointing.png)
 
 That's it !
+
+Next version should add download latest version directly from FreeCAD.
 
 
