@@ -1,4 +1,4 @@
-import FreeCAD, os, requests, uuid
+import FreeCAD, os, requests
 import freecad_plm_pb2 as PlmBuf
 from PySide import QtCore, QtGui
 
