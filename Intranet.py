@@ -114,7 +114,7 @@ class TaackPlmTaskPanel(object):
         self.avoidLoop.append(obj.Name)
         plmFile = PlmBuf.PlmFile()
         plmFile.name = obj.Name
-        plmFile.id = obj.UId
+        plmFile.id = obj.Uid
         plmFile.label = obj.Label
         plmFile.comment = obj.Comment
         plmFile.fileName = obj.FileName
