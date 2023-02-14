@@ -113,6 +113,9 @@ class TaackPlmTaskPanel(object):
             return
         self.avoidLoop.append(obj.Name)
         plmFile = PlmBuf.PlmFile()
+        s = os.stat(obj.FileName)
+        plmFile.cTimeNs = s.st_ctime_ns
+        plmFile.uTimeNs = s.st_mtime_ns
         plmFile.name = obj.Name
         plmFile.id = obj.Uid
         plmFile.label = obj.Label
