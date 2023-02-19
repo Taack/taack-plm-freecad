@@ -1,8 +1,15 @@
 # Taack PLM workbench for FreeCAD
 
-This workbench contains tools to interact with Taack Plm Intranet server app you can find under the https://github.com/Taack/plm  
+This workbench contains tools to interact with Taack Plm Intranet server app you can find under the https://github.com/Taack/plm
 
 ## Installation
+
+If you use FreeCAD version < 0.21.0, you will have to install **python-protobuf**. To do so, type as user:
+
+```bash
+pip install protobuf
+```
+Workbench dependencies should be managed directly with FreeCAD, starting from version 0.21.
 
 This Workbench is part of the [FreeCAD addons](https://github.com/FreeCAD/FreeCAD-addons) collection and can be simply installed from the Addons manager.
 
