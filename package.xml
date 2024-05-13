@@ -25,7 +25,7 @@
     <workbench>
       <classname>TaackPLMWorkbench</classname>
       <subdirectory>./</subdirectory>
-      <depend type="python">google.protobuf</depend>
+      <depend type="python">python-protobuf</depend>
     </workbench>
   </content>
 
