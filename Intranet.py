@@ -102,6 +102,9 @@ class TaackPlmTaskPanel(object):
             return True
         else:
             print(r.json()["message"])
+            self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
+            self.form.connectButton.setEnabled(True)
+            self.form.connectButton.setText('DisConnected')
             return False
 
     ### FreeCAD <-> protobuf conversion tools
