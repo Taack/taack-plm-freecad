@@ -57,7 +57,14 @@ class TaackPlmTaskPanel(object):
         print('Accept')
         if (not self.po.connected):
             return
-        self.uploadCurrentActiveDoc()
+        try:
+            self.uploadCurrentActiveDoc()
+        except:
+            self.po.connected = False
+            self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
+            self.form.connectButton.setEnabled(True)
+            self.form.connectButton.setText('DisConnected')
+
         FreeCADGui.Control.closeDialog()
 
     def logIntranet(self):
