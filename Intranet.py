@@ -70,19 +70,22 @@ class TaackPlmTaskPanel(object):
     def logIntranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
-        r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data)
-
-        if r.json()["success"] == True:
-            self.po.connected = True
-            self.po.user = self.form.userEdit.text()
-            self.po.url = self.form.urlEdit.text()
-            self.po.passwd = self.form.passEdit.text()
-            self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
-            self.form.connectButton.setEnabled(False)
-            self.form.connectButton.setText('Connected')
-        else:
-            print(r.json()["message"])
-            self.po.connected = False
+        try:
+            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data, timeout=5)
+            if r.json()["success"] == True:
+                self.po.connected = True
+                self.po.user = self.form.userEdit.text()
+                self.po.url = self.form.urlEdit.text()
+                self.po.passwd = self.form.passEdit.text()
+                self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
+                self.form.connectButton.setEnabled(False)
+                self.form.connectButton.setText('Connected')
+            else:
+                print(r.json()["message"])
+                self.po.connected = False
+        except:
+            FreeCAD.Console.PrintWarning(translate("TaackPlm","Can't connect to the intranet.")+"\n")
+            return
 
     def uploadCurrentActiveDoc(self):
         if (self.po.connected == False):
