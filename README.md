@@ -25,7 +25,7 @@ Under Freecad:
 
 The first time, you will be prompted for entering the server URL, along with your user credentials:
 
-![enter credential](https://github.com/Taack/taack-plm-freecad/blob/main/screenshot-plm-credential.png)
+![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/screenshot-plm-credential.png)
 
 Clicking on **Connect** Button.
 
@@ -49,11 +49,11 @@ All linked files will be uploaded. There are 2 situations from here, for each fi
 
 From your Intranet, click on PLM icon, then you will see a list of model.
 
-![Filtering model](https://github.com/Taack/taack-plm-freecad/blob/main/sc-filter.png)
+![Filtering model](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/sc-filter.png)
 
 Search using filters the one you are interested in, click on the **eye** icon.
 
-![Download model](https://github.com/Taack/taack-plm-freecad/blob/main/sc-open.png)
+![Download model](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/sc-open.png)
 
 Here you can either:
 
@@ -61,16 +61,16 @@ Here you can either:
 * Add comment OR change model status
 * Download a previous version
 
-![Access History](https://github.com/Taack/taack-plm-freecad/blob/main/sc-prev.png)
+![Access History](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/sc-prev.png)
 
 
 For more complex model, you can access linked files:
 
-![See linked data](https://github.com/Taack/taack-plm-freecad/blob/main/sc-linked.png)
+![See linked data](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/sc-linked.png)
 
 Or links pointing to this model:
 
-![See parent deps](https://github.com/Taack/taack-plm-freecad/blob/main/sc-pointing.png)
+![See parent deps](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/sc-pointing.png)
 
 That's it !
 

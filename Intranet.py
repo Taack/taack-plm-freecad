@@ -122,53 +122,61 @@ class TaackPlmTaskPanel(object):
 
     def createDocProtobuf(self, obj, bucket):
         print("createDocProtobuf " + obj.Name)
-        if (self.avoidLoop.count(obj.Name) > 0):
-            return
-        self.avoidLoop.append(obj.Name)
-        plmFile = PlmBuf.PlmFile()
-        s = os.stat(obj.FileName)
-        plmFile.cTimeNs = s.st_ctime_ns
-        plmFile.uTimeNs = s.st_mtime_ns
-        plmFile.name = obj.Name
-        plmFile.id = obj.Uid
-        plmFile.label = obj.Label
-        plmFile.comment = obj.Comment
-        plmFile.fileName = obj.FileName
-        plmFile.createdDate = obj.CreationDate
-        plmFile.createdBy = obj.CreatedBy
-        plmFile.lastModifiedDate = obj.LastModifiedDate
-        plmFile.lastModifiedBy = obj.LastModifiedBy
-        plmFile.label = obj.Label
-        plmFile.comment = obj.Comment
-        plmFile.fileName = obj.FileName
-        linkedObjects = iter(obj.Objects)
-        for l in linkedObjects:
-            if (type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link'):
-                lp = self.createLinkProtobuf(l, bucket)
-                if (lp != None):
-                    plmFile.externalLink.append(lp)
+        try:
+            if (self.avoidLoop.count(obj.Name) > 0):
+                return
+            self.avoidLoop.append(obj.Name)
+            plmFile = PlmBuf.PlmFile()
+            s = os.stat(obj.FileName)
+            plmFile.cTimeNs = s.st_ctime_ns
+            plmFile.uTimeNs = s.st_mtime_ns
+            plmFile.name = obj.Name
+            plmFile.id = obj.Id if obj.Id else obj.Uid
+            plmFile.label = obj.Label
+            plmFile.comment = obj.Comment
+            plmFile.fileName = obj.FileName
+            plmFile.createdDate = obj.CreationDate
+            plmFile.createdBy = obj.CreatedBy
+            plmFile.lastModifiedDate = obj.LastModifiedDate
+            plmFile.lastModifiedBy = obj.LastModifiedBy
+            plmFile.label = obj.Label
+            plmFile.comment = obj.Comment
+            plmFile.fileName = obj.FileName
+            linkedObjects = iter(obj.Objects)
+            for l in linkedObjects:
+                if (type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link'):
+                    lp = self.createLinkProtobuf(l, bucket)
+                    if (lp != None):
+                        plmFile.externalLink.append(lp)
 
-        plmFile.fileContent = open(obj.FileName, 'rb').read()
-        bucket.plmFiles[plmFile.name].CopyFrom(plmFile)
+            plmFile.fileContent = open(obj.FileName, 'rb').read()
+            bucket.plmFiles[plmFile.name].CopyFrom(plmFile)
+        except:
+            print("createDocProtobuf Error")
+
         return obj.Name
 
     def createLinkProtobuf(self, obj, bucket):
         print("createLinkProtobuf " + obj.Name)
-        plmLink = PlmBuf.PlmLink()
-        plmLink.linkedObject = obj.LinkedObject.Name
-        plmLink.linkClaimChild = obj.LinkClaimChild
-        if (obj.LinkCopyOnChange == 'Disabled'):
-            plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
-        elif (obj.LinkCopyOnChange == 'Enabled'):
-            plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
-        elif (obj.LinkCopyOnChange == 'Owned'):
-            plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
-        plmLink.linkTransform = obj.LinkTransform
-        f = self.createDocProtobuf(obj.LinkedObject.Document, bucket)
-        if (f == None):
-            return
-        plmLink.plmFile = f
-        bucket.links[obj.LinkedObject.Document.Name].CopyFrom(plmLink)
+        try:
+            plmLink = PlmBuf.PlmLink()
+            plmLink.linkedObject = obj.LinkedObject.Name
+            plmLink.linkClaimChild = obj.LinkClaimChild
+            if (obj.LinkCopyOnChange == 'Disabled'):
+                plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
+            elif (obj.LinkCopyOnChange == 'Enabled'):
+                plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
+            elif (obj.LinkCopyOnChange == 'Owned'):
+                plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
+            plmLink.linkTransform = obj.LinkTransform
+            f = self.createDocProtobuf(obj.LinkedObject.Document, bucket)
+            if (f == None):
+                return
+            plmLink.plmFile = f
+            bucket.links[obj.LinkedObject.Document.Name].CopyFrom(plmLink)
+        except:
+            print("createLinkProtobuf Error")
+
         return obj.LinkedObject.Document.Name
 
 
