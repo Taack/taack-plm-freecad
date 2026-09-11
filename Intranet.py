@@ -36,12 +36,6 @@ class CommandTaackPlm:
     def Activated(self):
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
 
-    def savePreference(self):
-        userText = self.user.text()
-        self.settings.setValue("username", userText)
-        urlText = self.url.text()
-        self.settings.setValue("url", urlText)
-
 
 
 class TaackPlmTaskPanel(object):
@@ -61,6 +55,12 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setEnabled(False)
             self.form.connectButton.setText('Connected')
 
+    def savePreferences(self):
+        self.po.user = self.form.userEdit.text()
+        self.po.settings.setValue("username", self.po.user)
+        self.po.url = self.form.urlEdit.text()
+        self.po.settings.setValue("url", self.po.url)
+
     def accept(self):
         print('Accept')
         if (not self.po.connected):
@@ -78,7 +78,7 @@ class TaackPlmTaskPanel(object):
     def logIntranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
-        self.po.savePreference()
+        self.savePreferences()
         try:
             r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data, timeout=5)
             if r.json()["success"] == True:
