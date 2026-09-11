@@ -22,9 +22,10 @@ __url__ = "http://taack.org"
 class CommandTaackPlm:
     def __init__(self):
         self.taackIntranetSession = requests.session()
+        self.settings = QtCore.QSettings("Taack", "TaackPLM")
         self.connected = False
-        self.user = ""
-        self.url = ""
+        self.user = self.settings.value("username", "Login")
+        self.url = self.settings.value("url", "Server URL")
         self.passwd = ""
 
     def GetResources(self):
@@ -34,6 +35,13 @@ class CommandTaackPlm:
 
     def Activated(self):
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
+
+    def savePreference(self):
+        userText = self.user.text()
+        self.settings.setValue("username", userText)
+        urlText = self.url.text()
+        self.settings.setValue("url", urlText)
+
 
 
 class TaackPlmTaskPanel(object):
@@ -70,6 +78,7 @@ class TaackPlmTaskPanel(object):
     def logIntranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
+        self.po.savePreference()
         try:
             r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data, timeout=5)
             if r.json()["success"] == True:
