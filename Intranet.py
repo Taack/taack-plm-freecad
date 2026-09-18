@@ -33,6 +33,14 @@ class CommandTaackPlm:
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet","Plm"),
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet","Manages the current document with Taack PLM")}
 
+    def IsActive(self):
+        '''Here you can define if the command must be active or not (greyed) if certain conditions
+        are met or not. This function is optional.'''
+        if FreeCAD.activeDocument():
+            return (True)
+        else:
+            return (False)
+
     def Activated(self):
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
 
@@ -64,16 +72,20 @@ class TaackPlmTaskPanel(object):
     def accept(self):
         print('Accept')
         if (not self.po.connected):
+            FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
             return
         try:
             self.uploadCurrentActiveDoc()
+            FreeCADGui.Control.closeDialog()
+        except ValueError as e:
+            FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... " + str(e))+"\n")
         except:
+            FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... Try to reconnect")+"\n")
             self.po.connected = False
             self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
             self.form.connectButton.setEnabled(True)
             self.form.connectButton.setText('DisConnected')
 
-        FreeCADGui.Control.closeDialog()
 
     def logIntranet(self):
         print('login Intranet ...')
@@ -161,7 +173,7 @@ class TaackPlmTaskPanel(object):
             plmFile.fileContent = open(obj.FileName, 'rb').read()
             bucket.plmFiles[plmFile.name].CopyFrom(plmFile)
         except:
-            print("createDocProtobuf Error")
+            raise ValueError("Select the file you waant to upload in the tree")
 
         return obj.Name
 

@@ -11,9 +11,22 @@ class TaackPLMWorkbench (Workbench):
 
     def Initialize(self):
         import Intranet
-        cmds = ["TaackPLM_Intranet"]
-        self.appendToolbar("Taack PLM",cmds)
-        self.appendMenu("Taack PLM",cmds)
+        self.cmds = ["TaackPLM_Intranet"]
+        self.appendToolbar(self.__class__.MenuText, self.cmds)
+        self.appendMenu(self.__class__.MenuText, self.cmds)
+
+    def Activated(self):
+        '''This function is executed when the workbench is activated'''
+        return
+
+    def Deactivated(self):
+        '''This function is executed when the workbench is deactivated'''
+        return
+
+    def ContextMenu(self, recipient):
+        '''This is executed whenever the user right-clicks on screen'''
+        # 'recipient' will be either 'view' or 'tree'
+        self.appendContextMenu(self.__class__.MenuText, self.list) # add commands to the context menu
 
     def GetClassName(self):
         return "Gui::PythonWorkbench"
