@@ -58,9 +58,11 @@ class TaackPlmTaskPanel(object):
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.logIntranet)
+        QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
         if (self.po.connected):
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
+            self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
 
     def savePreferences(self):
@@ -87,6 +89,9 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setText('DisConnected')
 
 
+    def fork(self):
+        pass
+
     def logIntranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
@@ -100,6 +105,7 @@ class TaackPlmTaskPanel(object):
                 self.po.passwd = self.form.passEdit.text()
                 self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
                 self.form.connectButton.setEnabled(False)
+                self.form.forkButton.setEnabled(True)
                 self.form.connectButton.setText('Connected')
             else:
                 print(r.json()["message"])
