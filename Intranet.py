@@ -51,7 +51,6 @@ class TaackPlmTaskPanel(object):
     '''The TaskPanel for the Taack PLM command'''
 
     def __init__(self, po):
-        self.uuidVersion = False
         self.po = po
         self.avoidLoop = []
         self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__),'taack-plm.ui'))
@@ -92,6 +91,10 @@ class TaackPlmTaskPanel(object):
 
     def fork(self):
         self.uuidVersion = uuid.uuid4()
+        obj = FreeCAD.ActiveDocument
+        obj.Id = obj.Id if obj.Id else obj.Uid + '/' + str(self.uuidVersion)
+        self.form.forkButton.setEnabled(False)
+
 
     def logIntranet(self):
         print('login Intranet ...')
@@ -159,10 +162,7 @@ class TaackPlmTaskPanel(object):
             plmFile.cTimeNs = s.st_ctime_ns
             plmFile.uTimeNs = s.st_mtime_ns
             plmFile.name = obj.Name
-            fileId = obj.Id if obj.Id else obj.Uid
-            print("fileId " + fileId)
-            fileId = fileId + '/' + str(self.uuidVersion) if self.uuidVersion else fileId
-            plmFile.id = fileId
+            plmFile.id = obj.Id if obj.Id else obj.Uid
             print("plmFile.id " + plmFile.id)
 
             plmFile.label = obj.Label
