@@ -97,6 +97,12 @@ Here you can either:
 
 For more complex model, you can access linked files or links pointing to this model via Hierarchy tab.
 
+---
+**NOTE**
+
+Fork only apply to the Active Part which will be duplicated into the server. It is not a deep fork. Modification on a dependency will increment this dependency history. If this is not what you want, fork sub-dependencies.
+---
+
 That's it !
 
 
