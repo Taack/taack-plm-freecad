@@ -1,4 +1,4 @@
-import FreeCAD, os, requests
+import FreeCAD, os, requests, uuid
 import freecad_plm_pb2 as PlmBuf
 from PySide import QtCore, QtGui
 
@@ -51,6 +51,7 @@ class TaackPlmTaskPanel(object):
     '''The TaskPanel for the Taack PLM command'''
 
     def __init__(self, po):
+        self.uuidVersion = False
         self.po = po
         self.avoidLoop = []
         self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__),'taack-plm.ui'))
@@ -90,7 +91,7 @@ class TaackPlmTaskPanel(object):
 
 
     def fork(self):
-        pass
+        self.uuidVersion = uuid.uuid4()
 
     def logIntranet(self):
         print('login Intranet ...')
@@ -158,7 +159,12 @@ class TaackPlmTaskPanel(object):
             plmFile.cTimeNs = s.st_ctime_ns
             plmFile.uTimeNs = s.st_mtime_ns
             plmFile.name = obj.Name
-            plmFile.id = obj.Id if obj.Id else obj.Uid
+            fileId = obj.Id if obj.Id else obj.Uid
+            print("fileId " + fileId)
+            fileId = fileId + '/' + str(self.uuidVersion) if self.uuidVersion else fileId
+            plmFile.id = fileId
+            print("plmFile.id " + plmFile.id)
+
             plmFile.label = obj.Label
             plmFile.comment = obj.Comment
             plmFile.fileName = obj.FileName
