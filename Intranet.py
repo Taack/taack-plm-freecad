@@ -1,4 +1,4 @@
-import FreeCAD, os, requests
+import FreeCAD, os, requests, uuid
 import freecad_plm_pb2 as PlmBuf
 from PySide import QtCore, QtGui
 
@@ -51,6 +51,7 @@ class TaackPlmTaskPanel(object):
     '''The TaskPanel for the Taack PLM command'''
 
     def __init__(self, po):
+        self.uuidVersion = False
         self.po = po
         self.avoidLoop = []
         self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__),'taack-plm.ui'))
@@ -58,9 +59,11 @@ class TaackPlmTaskPanel(object):
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.logIntranet)
+        QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
         if (self.po.connected):
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
+            self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
 
     def savePreferences(self):
@@ -87,6 +90,9 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setText('DisConnected')
 
 
+    def fork(self):
+        self.uuidVersion = uuid.uuid4()
+
     def logIntranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
@@ -100,6 +106,7 @@ class TaackPlmTaskPanel(object):
                 self.po.passwd = self.form.passEdit.text()
                 self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
                 self.form.connectButton.setEnabled(False)
+                self.form.forkButton.setEnabled(True)
                 self.form.connectButton.setText('Connected')
             else:
                 print(r.json()["message"])
@@ -152,7 +159,12 @@ class TaackPlmTaskPanel(object):
             plmFile.cTimeNs = s.st_ctime_ns
             plmFile.uTimeNs = s.st_mtime_ns
             plmFile.name = obj.Name
-            plmFile.id = obj.Id if obj.Id else obj.Uid
+            fileId = obj.Id if obj.Id else obj.Uid
+            print("fileId " + fileId)
+            fileId = fileId + '/' + str(self.uuidVersion) if self.uuidVersion else fileId
+            plmFile.id = fileId
+            print("plmFile.id " + plmFile.id)
+
             plmFile.label = obj.Label
             plmFile.comment = obj.Comment
             plmFile.fileName = obj.FileName
