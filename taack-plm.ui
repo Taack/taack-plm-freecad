@@ -6,45 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>407</width>
-    <height>512</height>
+    <width>413</width>
+    <height>445</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="2" column="1">
-    <widget class="QLineEdit" name="passEdit">
-     <property name="echoMode">
-      <enum>QLineEdit::EchoMode::Password</enum>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="urlLabel">
-     <property name="text">
-      <string>URL</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Pass</string>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QLineEdit" name="userEdit"/>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLineEdit" name="urlEdit"/>
-   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_2">
      <property name="text">
       <string>User</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QRadioButton" name="forkTouched">
+     <property name="text">
+      <string>Fork Touched</string>
      </property>
     </widget>
    </item>
@@ -55,13 +35,57 @@
      </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
+   <item row="1" column="1">
+    <widget class="QLineEdit" name="userEdit"/>
+   </item>
+   <item row="8" column="0">
+    <widget class="QRadioButton" name="forkAll">
+     <property name="text">
+      <string>Fork All</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="passEdit">
+     <property name="echoMode">
+      <enum>QLineEdit::EchoMode::Password</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="0">
+    <widget class="QRadioButton" name="forkActive">
+     <property name="text">
+      <string>Fork Active</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>Pass</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLineEdit" name="urlEdit"/>
+   </item>
+   <item row="10" column="0" colspan="2">
     <widget class="QPushButton" name="forkButton">
      <property name="enabled">
       <bool>false</bool>
      </property>
      <property name="text">
       <string>Fork History</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="urlLabel">
+     <property name="text">
+      <string>URL</string>
      </property>
     </widget>
    </item>

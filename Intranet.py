@@ -34,12 +34,12 @@ class CommandTaackPlm:
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet","Manages the current document with Taack PLM")}
 
     def IsActive(self):
-        '''Here you can define if the command must be active or not (greyed) if certain conditions
-        are met or not. This function is optional.'''
+        """Here you can define if the command must be active or not (greyed) if certain conditions
+        are met or not. This function is optional."""
         if FreeCAD.activeDocument():
-            return (True)
+            return True
         else:
-            return (False)
+            return False
 
     def Activated(self):
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
@@ -51,21 +51,24 @@ class TaackPlmTaskPanel(object):
     '''The TaskPanel for the Taack PLM command'''
 
     def __init__(self, po):
+        self.uuidVersion = None
+        self.docLabelsForked = None
+        self.forkMode = 'Active'
         self.po = po
         self.avoidLoop = []
         self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__),'taack-plm.ui'))
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
-        QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.logIntranet)
+        QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
-        if (self.po.connected):
+        if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
             self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
 
-    def savePreferences(self):
+    def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
         self.po.url = self.form.urlEdit.text()
@@ -73,7 +76,7 @@ class TaackPlmTaskPanel(object):
 
     def accept(self):
         print('Accept')
-        if (not self.po.connected):
+        if not self.po.connected:
             FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
             return
         try:
@@ -90,16 +93,36 @@ class TaackPlmTaskPanel(object):
 
 
     def fork(self):
+        self.docLabelsForked = []
         self.uuidVersion = uuid.uuid4()
-        obj = FreeCAD.ActiveDocument
-        obj.Id = obj.Id if obj.Id else obj.Uid + '/' + str(self.uuidVersion)
+        print(str(self.form.forkActive))
+        print(str(self.form.forkAll))
+        print(str(self.form.forkTouched))
+        self.fork_children(FreeCAD.ActiveDocument)
         self.form.forkButton.setEnabled(False)
 
+    def fork_children(self, part):
+        print("Forking ... " + str(part))
+        if part.Label in self.docLabelsForked:
+            return None
+        if (part.isTouched() and self.form.forkTouched.isChecked()) or self.form.forkActive.isChecked():
+            part.Id = part.Id if part.Id else part.Uid + '/' + str(self.uuidVersion)
+        self.docLabelsForked.append(part.Label)
+        if self.form.forkTouched.isChecked() or self.form.forkAll.isChecked():
+            linked_objects = iter(part.Objects)
+            for l in linked_objects:
+                if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
+                    if self.form.forkAll.isChecked() or l.LinkedObject.Document.isTouched():
+                        l.LinkedObject.Document.Id = l.LinkedObject.Document.Id if l.LinkedObject.Document.Id else l.LinkedObject.Document.Uid + '/' + str(self.uuidVersion)
+                        self.fork_children(l.LinkedObject.Document)
+        return None
 
-    def logIntranet(self):
+
+
+    def login_intranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
-        self.savePreferences()
+        self.save_preferences()
         try:
             r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data, timeout=5)
             if r.json()["success"] == True:
@@ -116,13 +139,13 @@ class TaackPlmTaskPanel(object):
                 self.po.connected = False
         except:
             FreeCAD.Console.PrintWarning(translate("TaackPlm","Can't connect to the intranet.")+"\n")
-            return
 
-    def uploadCurrentActiveDoc(self):
-        if (self.po.connected == False):
+
+    def upload_current_active_doc(self):
+        if not self.po.connected:
             FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
             return False
-        b = self.createBucketProtobuf()
+        b = self.create_bucket_protobuf()
         f = open("fc_proto", 'wb')
         f.write(b.SerializeToString())
         f.close()
@@ -131,7 +154,7 @@ class TaackPlmTaskPanel(object):
         r = self.po.taackIntranetSession.post(url=self.po.url + 'plm/uploadProto', files={'proto.bin': f2}, data=data)
         f2.close()
 
-        if r.json()["success"] == True:
+        if r.json()["success"]:
             # print r.json()["apiToken"]
             return True
         else:
@@ -143,72 +166,72 @@ class TaackPlmTaskPanel(object):
 
     ### FreeCAD <-> protobuf conversion tools
 
-    def createBucketProtobuf(self):
+    def create_bucket_protobuf(self):
         print("createBucketProtobuf")
         self.avoidLoop = []
         d = FreeCAD.ActiveDocument
         bucket = PlmBuf.Bucket()
-        self.createDocProtobuf(d, bucket)
+        self.create_doc_protobuf(d, bucket)
         return bucket
 
-    def createDocProtobuf(self, obj, bucket):
+    def create_doc_protobuf(self, obj, bucket):
         print("createDocProtobuf " + obj.Name)
         try:
-            if (self.avoidLoop.count(obj.Name) > 0):
-                return
+            if self.avoidLoop.count(obj.Name) > 0:
+                return None
             self.avoidLoop.append(obj.Name)
-            plmFile = PlmBuf.PlmFile()
+            plm_file = PlmBuf.PlmFile()
             s = os.stat(obj.FileName)
-            plmFile.cTimeNs = s.st_ctime_ns
-            plmFile.uTimeNs = s.st_mtime_ns
-            plmFile.name = obj.Name
-            plmFile.id = obj.Id if obj.Id else obj.Uid
-            print("plmFile.id " + plmFile.id)
+            plm_file.cTimeNs = s.st_ctime_ns
+            plm_file.uTimeNs = s.st_mtime_ns
+            plm_file.name = obj.Name
+            plm_file.id = obj.Id if obj.Id else obj.Uid
+            print("plmFile.id " + plm_file.id)
 
-            plmFile.label = obj.Label
-            plmFile.comment = obj.Comment
-            plmFile.fileName = obj.FileName
-            plmFile.createdDate = obj.CreationDate
-            plmFile.createdBy = obj.CreatedBy
-            plmFile.lastModifiedDate = obj.LastModifiedDate
-            plmFile.lastModifiedBy = obj.LastModifiedBy
-            plmFile.label = obj.Label
-            plmFile.comment = obj.Comment
-            plmFile.fileName = obj.FileName
-            linkedObjects = iter(obj.Objects)
-            for l in linkedObjects:
-                if (type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link'):
-                    lp = self.createLinkProtobuf(l, bucket)
-                    if (lp != None):
-                        plmFile.externalLink.append(lp)
+            plm_file.label = obj.Label
+            plm_file.comment = obj.Comment
+            plm_file.fileName = obj.FileName
+            plm_file.createdDate = obj.CreationDate
+            plm_file.createdBy = obj.CreatedBy
+            plm_file.lastModifiedDate = obj.LastModifiedDate
+            plm_file.lastModifiedBy = obj.LastModifiedBy
+            plm_file.label = obj.Label
+            plm_file.comment = obj.Comment
+            plm_file.fileName = obj.FileName
+            linked_objects = iter(obj.Objects)
+            for l in linked_objects:
+                if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
+                    lp = self.create_link_protobuf(l, bucket)
+                    if lp is not None:
+                        plm_file.externalLink.append(lp)
 
-            plmFile.fileContent = open(obj.FileName, 'rb').read()
-            bucket.plmFiles[plmFile.name].CopyFrom(plmFile)
+            plm_file.fileContent = open(obj.FileName, 'rb').read()
+            bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
         except:
             raise ValueError("Select the file you waant to upload in the tree")
 
         return obj.Name
 
-    def createLinkProtobuf(self, obj, bucket):
+    def create_link_protobuf(self, obj, bucket):
         print("createLinkProtobuf " + obj.Name)
         try:
-            plmLink = PlmBuf.PlmLink()
-            plmLink.linkedObject = obj.LinkedObject.Name
-            plmLink.linkClaimChild = obj.LinkClaimChild
-            if (obj.LinkCopyOnChange == 'Disabled'):
-                plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
-            elif (obj.LinkCopyOnChange == 'Enabled'):
-                plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
-            elif (obj.LinkCopyOnChange == 'Owned'):
-                plmLink.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
-            plmLink.linkTransform = obj.LinkTransform
-            f = self.createDocProtobuf(obj.LinkedObject.Document, bucket)
-            if (f == None):
-                return
-            plmLink.plmFile = f
-            bucket.links[obj.LinkedObject.Document.Name].CopyFrom(plmLink)
+            plm_link = PlmBuf.PlmLink()
+            plm_link.linkedObject = obj.LinkedObject.Name
+            plm_link.linkClaimChild = obj.LinkClaimChild
+            if obj.LinkCopyOnChange == 'Disabled':
+                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
+            elif obj.LinkCopyOnChange == 'Enabled':
+                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
+            elif obj.LinkCopyOnChange == 'Owned':
+                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
+            plm_link.linkTransform = obj.LinkTransform
+            f = self.create_doc_protobuf(obj.LinkedObject.Document, bucket)
+            if f is None:
+                return None
+            plm_link.plmFile = f
+            bucket.links[obj.LinkedObject.Document.Name].CopyFrom(plm_link)
         except:
-            print("createLinkProtobuf Error")
+            raise ValueError("createLinkProtobuf Error")
 
         return obj.LinkedObject.Document.Name
 
