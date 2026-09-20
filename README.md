@@ -83,7 +83,8 @@ From your Intranet, click on PLM icon, then you will see a list of model.
 1. Help
 2. Filter
 3. Model Table
-4. Main Menu 
+4. Access Duplicated Parent Part
+5. Main Menu 
    1. **Parts**: Either in CREATED or FREE Status
    2. **Top Assemblies**: Flat table of Files with Links, in CREATED or FREE Status
    3. **Locked Parts**: Either OBSOLETED or LOCKED Status
