@@ -24,7 +24,7 @@
    <item row="9" column="0">
     <widget class="QRadioButton" name="forkTouched">
      <property name="text">
-      <string>Fork Touched</string>
+      <string>Duplicate Modified Parts</string>
      </property>
     </widget>
    </item>
@@ -41,7 +41,7 @@
    <item row="8" column="0">
     <widget class="QRadioButton" name="forkAll">
      <property name="text">
-      <string>Fork All</string>
+      <string>Duplicate All Parts</string>
      </property>
     </widget>
    </item>
@@ -55,7 +55,7 @@
    <item row="7" column="0">
     <widget class="QRadioButton" name="forkActive">
      <property name="text">
-      <string>Fork Active</string>
+      <string>Duplicate Active Part</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -78,7 +78,7 @@
       <bool>false</bool>
      </property>
      <property name="text">
-      <string>Fork History</string>
+      <string>Duplicate History</string>
      </property>
     </widget>
    </item>
