@@ -78,7 +78,7 @@ All linked files will be uploaded. There are 2 situations from here, for each fi
 
 From your Intranet, click on PLM icon, then you will see a list of model.
 
-![Filtering model](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-server-part-list.webp)
+![Filtering model](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-server-part-list2.webp)
 
 1. Help
 2. Filter
