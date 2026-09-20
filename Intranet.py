@@ -94,12 +94,12 @@ class TaackPlmTaskPanel(object):
 
     def fork(self):
         self.docLabelsForked = []
-        self.uuidVersion = uuid.uuid4()
+        self.uuidVersion = self.uuidVersion if self.uuidVersion else uuid.uuid4()
         print(str(self.form.forkActive))
         print(str(self.form.forkAll))
         print(str(self.form.forkTouched))
         self.fork_children(FreeCAD.ActiveDocument)
-        self.form.forkButton.setEnabled(False)
+        # self.form.forkButton.setEnabled(False)
 
     def fork_children(self, part):
         print("Forking ... " + str(part))
