@@ -105,15 +105,19 @@ class TaackPlmTaskPanel(object):
         print("Forking ... " + str(part))
         if part.Label in self.docLabelsForked:
             return None
-        if (part.isTouched() and self.form.forkTouched.isChecked()) or self.form.forkActive.isChecked():
-            part.Id = part.Id if part.Id else part.Uid + '/' + str(self.uuidVersion)
+        if (part.isTouched() and self.form.forkTouched.isChecked()) or self.form.forkActive.isChecked() or self.form.forkAll.isChecked():
+            print("part.isTouched(): " + str(part.isTouched()))
+            if not part.Id.endswith(str(self.uuidVersion)):
+                part.Id = (part.Id if part.Id else part.Uid) + '/' + str(self.uuidVersion)
         self.docLabelsForked.append(part.Label)
         if self.form.forkTouched.isChecked() or self.form.forkAll.isChecked():
             linked_objects = iter(part.Objects)
             for l in linked_objects:
                 if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
                     if self.form.forkAll.isChecked() or l.LinkedObject.Document.isTouched():
-                        l.LinkedObject.Document.Id = l.LinkedObject.Document.Id if l.LinkedObject.Document.Id else l.LinkedObject.Document.Uid + '/' + str(self.uuidVersion)
+                        print("l.LinkedObject.Document.isTouched(): " + str(l.LinkedObject.Document.isTouched()))
+                        if not l.LinkedObject.Document.Id.endswith(str(self.uuidVersion)):
+                            l.LinkedObject.Document.Id = (l.LinkedObject.Document.Id if l.LinkedObject.Document.Id else l.LinkedObject.Document.Uid) + '/' + str(self.uuidVersion)
                         self.fork_children(l.LinkedObject.Document)
         return None
 
