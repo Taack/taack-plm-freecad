@@ -25,7 +25,7 @@ Under Freecad:
 
 The first time, you will be prompted for entering the server URL, along with your user credentials:
 
-![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-gui.webp)
+![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-gui2.webp)
 
 1. Workbench Icon
 2. Main Command
