@@ -33,13 +33,32 @@ The first time, you will be prompted for entering the server URL, along with you
 4. User Login Input
 5. User Password Input
 6. Connect Button
-7. Fork History Button
+7. Duplicate History Options
+8. Duplicate History Button
 
 Clicking on **Connect** Button.
 
 If the **Connect** Button turns disabled, you are connected to your Intranet Server.
 
-You can duplicate part history in the server clicking on the **Fork History** button. Fork can be applied recursively to other forks.
+### Duplicate Options
+
+#### Duplicate Active Part
+
+Only the main part history will be duplicated. Dependencies will have only one history. Both, modifications on primary part and duplicated part will **modify dependency history**.
+
+#### Duplicate All Parts
+
+Main Parts and its dependencies will have a new history. Modifications on primary part and duplicated part will be independent
+
+#### Duplicate Modified Parts
+
+Main Parts and modified dependencies will have a new history.
+
+The part duplicated appear in details view:
+
+![Duplicated models](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-server-part-details-duplicated.webp)
+
+
 
 ### Upload a model and Links to other features from other files
 
@@ -96,12 +115,6 @@ Here you can either:
 4. Preview a precise version
 
 For more complex model, you can access linked files or links pointing to this model via Hierarchy tab.
-
----
-**NOTE**
-
-Fork only apply to the Active Part which will be duplicated into the server. It is not a deep fork. Modification on a dependency will increment this dependency history. If this is not what you want, fork sub-dependencies.
----
 
 That's it !
 
