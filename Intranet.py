@@ -80,7 +80,7 @@ class TaackPlmTaskPanel(object):
             FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
             return
         try:
-            self.uploadCurrentActiveDoc()
+            self.upload_current_active_doc()
             FreeCADGui.Control.closeDialog()
         except ValueError as e:
             FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... " + str(e))+"\n")
