@@ -44,28 +44,28 @@ If the **Connect** Button turns disabled, you are connected to your Intranet Ser
 
 #### Duplicate Active Part
 
-Only the main part history will be duplicated. Dependencies will have only one history. Both, modifications on primary part and duplicated part will **modify dependency history**.
+Only the main part history will be duplicated. Dependencies will not have new history. Both, modifications on primary part and duplicated part will **modify dependencies history**.
 
 #### Duplicate All Parts
 
-Main Parts and its dependencies will have a new history. Modifications on primary part and duplicated part will be independent
+Main Part and its dependencies will have all a new history. Modifications on primary part and duplicated part will be independent. 
 
 #### Duplicate Modified Parts
 
-Main Parts and modified dependencies will have a new history.
+Main Parts and modified dependencies will have a new history. Do not save the model before. Make your modifications, click on the option, save the file and its dependencies, then upload the model
 
 The part duplicated appear in details view:
 
 ![Duplicated models](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-server-part-details-duplicated.webp)
 
-
+1. Duplicated Parts tab
 
 ### Upload a model and Links to other features from other files
 
 Once you are connected
 
 * Ensure a file is selected (if not already done, save it before uploading)
-* click on the **Taack** icon
+* click on the **Taack** icon (2nd point in the previous screenshot)
 * click on the **Ok** Button
 
 All linked files will be uploaded. There are 2 situations from here, for each file:
