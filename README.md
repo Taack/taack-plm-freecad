@@ -119,3 +119,4 @@ For more complex model, you can access linked files or links pointing to this mo
 
 Sources and assets are under [LGPL 2.1 Licence](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/LICENSE).
 
+Please open an [issue](https://github.com/Taack/taack-plm-freecad/issues) to report bugs or other problems.
