@@ -199,9 +199,6 @@ class TaackPlmTaskPanel(object):
             plm_file.createdBy = obj.CreatedBy
             plm_file.lastModifiedDate = obj.LastModifiedDate
             plm_file.lastModifiedBy = obj.LastModifiedBy
-            plm_file.label = obj.Label
-            plm_file.comment = obj.Comment
-            plm_file.fileName = obj.FileName
             linked_objects = iter(obj.Objects)
             for l in linked_objects:
                 if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
