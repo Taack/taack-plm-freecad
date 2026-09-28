@@ -2,7 +2,10 @@ import FreeCAD
 import json
 import os
 import requests
+import zipfile
 import uuid
+import time
+import hashlib
 from PySide import QtCore, QtGui
 
 import freecad_plm_pb2 as PlmBuf
@@ -59,6 +62,7 @@ class TaackPlmTaskPanel(object):
 
         self.uuidVersion = None
         self.docLabelsForked = None
+        self.shaOneMap = None
         self.forkMode = 'Active'
         self.po = po
         self.avoidLoop = set()
@@ -96,6 +100,17 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setEnabled(False)
             self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
+
+    def compute_file_shaOne(self, filePath):
+        sha1 = hashlib.sha1()
+        with open(filePath, 'rb') as f:
+            while True:
+                data = f.read(65536)
+                if not data:
+                    break
+                sha1.update(data)
+
+        return sha1.hexdigest()
 
     def add_upload_part_to_list(self, doc):
         if doc is None:
@@ -539,18 +554,10 @@ class TaackPlmTaskPanel(object):
         print("======================================")
 
         for doc in documents:
-
             if doc.Name in self.docLabelsForked:
                 continue
-
             self.docLabelsForked.append(doc.Name)
-
-            print(
-                "Forking: " +
-                doc.Name +
-                " / " +
-                doc.Label
-            )
+            print("Forking: " +doc.Name + " / " + doc.Label)
 
         print("======================================")
 
@@ -588,49 +595,62 @@ class TaackPlmTaskPanel(object):
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
+
+        self.avoidLoop = set()
+        self.shaOneMap = dict()
+
         b = self.create_bucket_protobuf()
         f = open("fc_proto", 'wb')
-        f.write(b.SerializeToString())
-        f.close()
+
+        zip_filename = "tmp-" + str(round(time.time() * 1000)) + ".zip"
+        with zipfile.ZipFile(file=zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+                             ) as zip_archive:
+
+            zip_archive.writestr("proto.bin", b.SerializeToString())
+            for eShaOne, filename in self.shaOneMap.items():
+                base_name, ext = os.path.splitext(filename)
+                zip_archive.write(filename, eShaOne + '.' + ext)
+
         data = {"ajax": 'true'}
-        f2 = open("fc_proto", 'rb')
+        f2 = open(zip_filename, 'rb')
         r = self.po.taackIntranetSession.post(url=self.po.url + 'plm/uploadProto', files={'proto.bin': f2}, data=data)
         f2.close()
 
-        if r.json()["success"]:
+        try:
+            if r.json()["success"]:
 
-            # The upload succeeded.
-            # Record the exact files that were included in this upload
-            # as the new modification baseline.
+                # The upload succeeded.
+                # Record the exact files that were included in this upload
+                # as the new modification baseline.
 
-            documents = self.get_upload_documents()
+                documents = self.get_upload_documents()
 
-            self._record_modified_baseline(
-                FreeCAD.ActiveDocument,
-                documents
-            )
+                self._record_modified_baseline(
+                    FreeCAD.ActiveDocument,
+                    documents
+                )
 
-            self.form.uploadProgress.setValue(100)
-            self.form.uploadButton.setEnabled(True)
-            self.form.uploadButton.setText("Upload")
+                self.form.uploadProgress.setValue(100)
+                self.form.uploadButton.setEnabled(True)
+                self.form.uploadButton.setText("Upload")
 
-            return True
-        else:
-            print(r.json()["message"])
-            self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
+                return True
+            else:
+                print(r.json()["message"])
+                self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
+                self.form.connectButton.setEnabled(True)
+                self.form.connectButton.setText('DisConnected')
+                self.form.uploadButton.setEnabled(True)
+                self.form.uploadButton.setText("Upload")
+        except Exception:
             self.form.connectButton.setEnabled(True)
-            self.form.connectButton.setText('DisConnected')
-            self.form.uploadButton.setEnabled(True)
-            self.form.uploadButton.setText("Upload")
 
-            return False
+        return False
 
     ### FreeCAD <-> protobuf conversion tools
 
     def create_bucket_protobuf(self):
         print("createBucketProtobuf")
-
-        self.avoidLoop = set()
 
         parts = self.get_upload_documents()
         total = len(parts)
@@ -654,7 +674,9 @@ class TaackPlmTaskPanel(object):
 
         # A document must have FileName.
         if not hasattr(obj, "FileName"):
-            raise ValueError("Upload error: object '" + getattr(obj, "Label", "<unknown>") + "' is not a FreeCAD Document. Type: " + getattr(obj, "TypeId", "<unknown>"))
+            raise ValueError(
+                "Upload error: object '" + getattr(obj, "Label", "<unknown>") + "' is not a FreeCAD Document. Type: " +
+                getattr(obj, "TypeId", "<unknown>"))
 
         print("createDocProtobuf: " +obj.Name + " / " + obj.Label)
 
@@ -674,6 +696,7 @@ class TaackPlmTaskPanel(object):
             plm_file.fileName = obj.FileName
             plm_file.createdDate = obj.CreationDate
             plm_file.createdBy = obj.CreatedBy
+            plm_file.sha1hex = self.compute_file_shaOne(obj.FileName)
             plm_file.lastModifiedDate = obj.LastModifiedDate
             plm_file.lastModifiedBy = obj.LastModifiedBy
             linked_objects = iter(obj.Objects)
@@ -684,7 +707,9 @@ class TaackPlmTaskPanel(object):
                         plm_file.externalLink.append(lp)
 
             plm_file.fileContent = open(obj.FileName, 'rb').read()
-            bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
+            # bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
+            self.shaOneMap[plm_file.sha1hex] = obj.FileName
+
         except:
             raise ValueError("Select the file you waant to upload in the tree")
 
