@@ -880,42 +880,17 @@ class TaackPlmTaskPanel(object):
             plm_file.createdBy = obj.CreatedBy
             plm_file.lastModifiedDate = obj.LastModifiedDate
             plm_file.lastModifiedBy = obj.LastModifiedBy
+            linked_objects = iter(obj.Objects)
+            for l in linked_objects:
+                if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
+                    lp = self.create_link_protobuf(l, bucket)
+                    if lp is not None:
+                        plm_file.externalLink.append(lp)
 
-            for l in obj.Objects:
-
-                if getattr(l, "TypeId", None) != "App::Link":
-                    continue
-
-                lp = self.create_link_protobuf(
-                    l,
-                    bucket
-                )
-
-                if lp is not None:
-                    plm_file.externalLink.append(lp)
-
-            with open(obj.FileName, "rb") as f:
-                plm_file.fileContent = f.read()
-
-            bucket.plmFiles[
-                plm_file.name
-            ].CopyFrom(plm_file)
-
-        except Exception as e:
-
-            print(
-                "createDocProtobuf ERROR for " +
-                getattr(obj, "Name", "<unknown>") +
-                ": " +
-                str(e)
-            )
-
-            raise ValueError(
-                "Cannot upload document '" +
-                getattr(obj, "Label", "<unknown>") +
-                "': " +
-                str(e)
-            )
+            plm_file.fileContent = open(obj.FileName, 'rb').read()
+            bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
+        except:
+            raise ValueError("Select the file you waant to upload in the tree")
 
         return obj.Name
 
