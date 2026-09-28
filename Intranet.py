@@ -608,8 +608,7 @@ class TaackPlmTaskPanel(object):
 
             zip_archive.writestr("proto.bin", b.SerializeToString())
             for eShaOne, filename in self.shaOneMap.items():
-                base_name, ext = os.path.splitext(filename)
-                zip_archive.write(filename, eShaOne + '.' + ext)
+                zip_archive.write(filename, eShaOne)
 
         data = {"ajax": 'true'}
         f2 = open(zip_filename, 'rb')
@@ -706,8 +705,8 @@ class TaackPlmTaskPanel(object):
                     if lp is not None:
                         plm_file.externalLink.append(lp)
 
-            plm_file.fileContent = open(obj.FileName, 'rb').read()
-            # bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
+            # plm_file.fileContent = open(obj.FileName, 'rb').read()
+            bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
             self.shaOneMap[plm_file.sha1hex] = obj.FileName
 
         except:
