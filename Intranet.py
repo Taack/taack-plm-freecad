@@ -600,9 +600,8 @@ class TaackPlmTaskPanel(object):
         self.shaOneMap = dict()
 
         b = self.create_bucket_protobuf()
-        f = open("fc_proto", 'wb')
 
-        zip_filename = "tmp-" + str(round(time.time() * 1000)) + ".zip"
+        zip_filename = "tmp-fc-" + str(round(time.time() * 1000)) + ".zip"
         with zipfile.ZipFile(file=zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
                              ) as zip_archive:
 
