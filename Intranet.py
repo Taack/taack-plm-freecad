@@ -1,8 +1,11 @@
-import FreeCAD, os, requests, uuid, json
-import freecad_plm_pb2 as PlmBuf
+import FreeCAD
+import json
+import os
+import requests
+import uuid
 from PySide import QtCore, QtGui
 
-App = FreeCAD
+import freecad_plm_pb2 as PlmBuf
 
 if FreeCAD.GuiUp:
     import FreeCADGui
@@ -71,18 +74,8 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
-
-        QtCore.QObject.connect(
-            self.form.forkActive,
-            QtCore.SIGNAL("toggled(bool)"),
-            self.refresh_part_list
-        )
-
-        QtCore.QObject.connect(
-            self.form.forkAll,
-            QtCore.SIGNAL("toggled(bool)"),
-            self.refresh_part_list
-        )
+        QtCore.QObject.connect(self.form.forkActive, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
+        QtCore.QObject.connect(self.form.forkAll, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
 
         QtCore.QObject.connect(
             self.form.forkTouched,
@@ -147,25 +140,18 @@ class TaackPlmTaskPanel(object):
         )
 
         for doc in documents:
-
             filename = getattr(doc, "FileName", "")
-
             if not filename:
                 continue
-
             filename = os.path.abspath(filename)
-
             mtime = self._get_file_mtime_ns(filename)
-
             if mtime is not None:
                 assembly_baseline[filename] = mtime
 
         self._save_modified_baseline(baseline)
 
     def get_upload_documents(self):
-
         doc = FreeCAD.ActiveDocument
-
         if doc is None:
             return []
 
@@ -177,18 +163,11 @@ class TaackPlmTaskPanel(object):
         all_documents = []
         visited_docs = set()
         visited_objects = set()
-
         visited_docs.add(
             getattr(doc, "Name", str(id(doc)))
         )
-
         for obj in getattr(doc, "Objects", []):
-            self.scan_object_for_links(
-                obj,
-                all_documents,
-                visited_docs,
-                visited_objects
-            )
+            self.scan_object_for_links(obj, all_documents, visited_docs, visited_objects)
 
         # All parts
         if self.form.forkAll.isChecked():
@@ -201,7 +180,6 @@ class TaackPlmTaskPanel(object):
             for linked_doc in all_documents:
                 if self._document_was_modified(linked_doc, doc):
                     modified_documents.append(linked_doc)
-
             return modified_documents
 
         return []
@@ -226,20 +204,12 @@ class TaackPlmTaskPanel(object):
         visited_documents.add(doc_name)
 
         print("")
-        print(
-            "Scanning document: " +
-            doc_name +
-            " / " +
-            doc.Label
-        )
+        print("Scanning document: " + doc_name + " / " + doc.Label)
 
         try:
             objects = list(doc.Objects)
         except Exception as e:
-
-            print(
-                "Unable to read document objects: " +
-                str(e)
+            print("Unable to read document objects: " + str(e)
             )
 
             return
@@ -684,32 +654,17 @@ class TaackPlmTaskPanel(object):
 
         # A document must have FileName.
         if not hasattr(obj, "FileName"):
-            raise ValueError(
-                "Upload error: object '" +
-                getattr(obj, "Label", "<unknown>") +
-                "' is not a FreeCAD Document. "
-                "Type: " +
-                getattr(obj, "TypeId", "<unknown>")
-            )
+            raise ValueError("Upload error: object '" + getattr(obj, "Label", "<unknown>") + "' is not a FreeCAD Document. Type: " + getattr(obj, "TypeId", "<unknown>"))
 
-        print(
-            "createDocProtobuf: " +
-            obj.Name +
-            " / " +
-            obj.Label
-        )
+        print("createDocProtobuf: " +obj.Name + " / " + obj.Label)
 
         try:
-
             if obj.Name in self.avoidLoop:
                 return None
 
             self.avoidLoop.add(obj.Name)
-
             plm_file = PlmBuf.PlmFile()
-
             s = os.stat(obj.FileName)
-
             plm_file.cTimeNs = s.st_ctime_ns
             plm_file.uTimeNs = s.st_mtime_ns
             plm_file.name = obj.Name
@@ -747,32 +702,20 @@ class TaackPlmTaskPanel(object):
                 part_filename: mtime_ns
             }
         """
-        param = App.ParamGet(
-            "User parameter:BaseApp/Preferences/TaackPLM"
-        )
-
+        param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/TaackPLM")
         raw = param.GetString("ModifiedFileBaseline", "{}")
-
         try:
             return json.loads(raw)
         except Exception:
             return {}
 
     def _save_modified_baseline(self, baseline):
-        param = App.ParamGet(
-            "User parameter:BaseApp/Preferences/TaackPLM"
-        )
-
-        param.SetString(
-            "ModifiedFileBaseline",
-            json.dumps(baseline)
-        )
+        param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/TaackPLM")
+        param.SetString("ModifiedFileBaseline", json.dumps(baseline))
 
     def _get_assembly_baseline(self, assembly_doc):
         baseline = self._get_modified_baseline()
-
         assembly_file = getattr(assembly_doc, "FileName", "")
-
         if not assembly_file:
             return {}
 
@@ -789,7 +732,6 @@ class TaackPlmTaskPanel(object):
         Returns True when the saved FCStd file is newer than the
         timestamp recorded after the last successful PLM upload.
         """
-
         filename = getattr(doc, "FileName", "")
         if not filename:
             return False
@@ -841,10 +783,7 @@ class TaackPlmTaskPanel(object):
             if linked_doc is None:
                 return None
 
-            f = self.create_doc_protobuf(
-                linked_doc,
-               bucket
-            )
+            f = self.create_doc_protobuf(linked_doc, bucket)
             if f is None:
                 return None
 
