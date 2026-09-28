@@ -1,6 +1,7 @@
 import FreeCAD, os, requests, uuid, json
 import freecad_plm_pb2 as PlmBuf
 from PySide import QtCore, QtGui
+
 App = FreeCAD
 
 if FreeCAD.GuiUp:
@@ -9,13 +10,15 @@ if FreeCAD.GuiUp:
     from PySide.QtCore import QT_TRANSLATE_NOOP
 else:
     # \cond
-    def translate(ctxt,txt):
+    def translate(ctxt, txt):
         return txt
-    def QT_TRANSLATE_NOOP(ctxt,txt):
+
+
+    def QT_TRANSLATE_NOOP(ctxt, txt):
         return txt
     # \endcond
 
-__title__="FreeCAD Taack PLM commands"
+__title__ = "FreeCAD Taack PLM commands"
 __author__ = "Adrien Guichard"
 __url__ = "http://taack.org"
 
@@ -29,11 +32,10 @@ class CommandTaackPlm:
         self.url = self.settings.value("url", "Server URL")
         self.passwd = "ChangeIt"
 
-
     def GetResources(self):
-        return {'Pixmap'  : os.path.join(os.path.dirname(__file__),"icons",'logo_taack.svg'),
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet","Plm"),
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet","Manages the current document with Taack PLM")}
+        return {'Pixmap': os.path.join(os.path.dirname(__file__), "icons", 'logo_taack.svg'),
+                'MenuText': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet", "Plm"),
+                'ToolTip': QtCore.QT_TRANSLATE_NOOP("TaackPlm_Intranet", "Manages the current document with Taack PLM")}
 
     def IsActive(self):
         """Here you can define if the command must be active or not (greyed) if certain conditions
@@ -47,9 +49,7 @@ class CommandTaackPlm:
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
 
 
-
 class TaackPlmTaskPanel(object):
-
     '''The TaskPanel for the Taack PLM command'''
 
     def __init__(self, po):
@@ -59,7 +59,7 @@ class TaackPlmTaskPanel(object):
         self.forkMode = 'Active'
         self.po = po
         self.avoidLoop = set()
-        self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__),'taack-plm.ui'))
+        self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__), 'taack-plm.ui'))
         # Select the Login tab when we are not connected.
         if not self.po.connected:
             self.form.tabWidget.setCurrentWidget(
@@ -71,7 +71,7 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
-        
+
         QtCore.QObject.connect(
             self.form.forkActive,
             QtCore.SIGNAL("toggled(bool)"),
@@ -94,18 +94,16 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.upload_current_active_doc
         )
-                
+
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
 
-        
-        
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
             self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
-   
+
     def add_upload_part_to_list(self, doc):
         if doc is None:
             return
@@ -120,21 +118,19 @@ class TaackPlmTaskPanel(object):
                 return
 
         self.form.List.addItem(label)
- 
 
- 
     def update_progress(self, current, total):
         if total > 0:
             percent = int((current / total) * 100)
             self.form.uploadProgress.setValue(percent)
-                
+
     def get_upload_parts(self):
         """
         Return the documents selected for upload.
         Never return doc.Objects.
         """
-        return self.get_upload_documents() 
-                    
+        return self.get_upload_documents()
+
     def _record_modified_baseline(self, assembly_doc, documents):
         assembly_file = getattr(assembly_doc, "FileName", "")
 
@@ -165,11 +161,7 @@ class TaackPlmTaskPanel(object):
                 assembly_baseline[filename] = mtime
 
         self._save_modified_baseline(baseline)
- 
- 
- 
-     
-     
+
     def get_upload_documents(self):
 
         doc = FreeCAD.ActiveDocument
@@ -191,7 +183,6 @@ class TaackPlmTaskPanel(object):
         )
 
         for obj in getattr(doc, "Objects", []):
-
             self.scan_object_for_links(
                 obj,
                 all_documents,
@@ -205,152 +196,16 @@ class TaackPlmTaskPanel(object):
 
         # Modified parts
         if self.form.forkTouched.isChecked():
-
             modified_documents = []
 
             for linked_doc in all_documents:
-
-                if self._document_was_modified(
-                    linked_doc,
-                    doc
-                ):
+                if self._document_was_modified(linked_doc, doc):
                     modified_documents.append(linked_doc)
 
             return modified_documents
 
         return []
 
-
-            
-    def has_touched_object(self, obj):
-        """
-        Safely determine whether a FreeCAD object is touched.
-        Some object types, such as Assembly.AssemblyObject, do not
-        implement isTouched().
-        """
-        try:
-            method = getattr(obj, "isTouched", None)
-            if callable(method):
-                return bool(method())
-        except Exception:
-            pass
-
-        return False
-
- 
-     
-    def document_is_modified(self, doc):
-
-        if doc is None:
-            return False
-
-        print(
-            "Checking modification state: " +
-            getattr(doc, "Name", "<unknown>") +
-            " / " +
-            getattr(doc, "Label", "<unknown>")
-        )
-
-        # ---------------------------------------------------------------
-        # 1. Check document-level touched state if available
-        # ---------------------------------------------------------------
-
-        try:
-
-            method = getattr(doc, "isTouched", None)
-
-            if callable(method):
-
-                touched = bool(method())
-
-                print(
-                    "  Document isTouched(): " +
-                    str(touched)
-                )
-
-                if touched:
-                    return True
-
-        except Exception as e:
-
-            print(
-                "  Document isTouched() failed: " +
-                str(e)
-            )
-
-        # ---------------------------------------------------------------
-        # 2. Check all document objects
-        #
-        # This is useful for an UNSAVED modification.
-        # ---------------------------------------------------------------
-
-        try:
-
-            for obj in doc.Objects:
-
-                try:
-
-                    method = getattr(obj, "isTouched", None)
-
-                    if callable(method) and bool(method()):
-
-                        print(
-                            "  TOUCHED OBJECT: " +
-                            getattr(obj, "Name", "<unknown>") +
-                            " / " +
-                            getattr(obj, "Label", "<unknown>") +
-                            " / " +
-                            getattr(obj, "TypeId", "<unknown>")
-                        )
-
-                        return True
-
-                except Exception:
-                    continue
-
-        except Exception as e:
-
-            print(
-                "  Unable to inspect objects: " +
-                str(e)
-            )
-
-        # ---------------------------------------------------------------
-        # 3. Check file modification time
-        #
-        # This catches a part that has been saved after being changed.
-        # ---------------------------------------------------------------
-
-        try:
-
-            filename = doc.FileName
-
-            if filename and os.path.isfile(filename):
-
-                mtime = os.stat(filename).st_mtime_ns
-
-                print(
-                    "  File mtime: " +
-                    str(mtime)
-                )
-
-                # A modification timestamp by itself isn't enough to
-                # know whether it changed since PLM's last upload.
-                #
-                # This is reported here for diagnostics.
-                
-        except Exception as e:
-
-            print(
-                "  Unable to read file timestamp: " +
-                str(e)
-            )
-
-        return False
- 
- 
- 
- 
     def get_linked_documents_recursive(
             self,
             doc,
@@ -390,13 +245,11 @@ class TaackPlmTaskPanel(object):
             return
 
         for obj in objects:
-
             self.scan_object_for_links(
                 obj,
                 documents,
                 visited_documents
             )
-
 
     def _is_link_object(self, obj):
         if obj is None:
@@ -415,7 +268,6 @@ class TaackPlmTaskPanel(object):
             pass
 
         return False
-
 
     def _get_linked_document(self, obj):
         if obj is None:
@@ -439,13 +291,12 @@ class TaackPlmTaskPanel(object):
 
         return None
 
-
     def scan_object_for_links(
-        self,
-        obj,
-        documents,
-        visited_docs=None,
-        visited_objects=None
+            self,
+            obj,
+            documents,
+            visited_docs=None,
+            visited_objects=None
     ):
         if obj is None:
             return
@@ -482,7 +333,6 @@ class TaackPlmTaskPanel(object):
                 doc_key = getattr(linked_doc, "Name", str(id(linked_doc)))
 
                 if doc_key not in visited_docs:
-
                     visited_docs.add(doc_key)
                     documents.append(linked_doc)
 
@@ -523,13 +373,12 @@ class TaackPlmTaskPanel(object):
                 visited_objects
             )
 
-
     def scan_document_for_links(
-        self,
-        doc,
-        documents,
-        visited_docs=None,
-        visited_objects=None
+            self,
+            doc,
+            documents,
+            visited_docs=None,
+            visited_objects=None
     ):
         if doc is None:
             return
@@ -573,7 +422,6 @@ class TaackPlmTaskPanel(object):
         if group:
 
             for child in group:
-
                 self.scan_object_for_links(
                     child,
                     documents,
@@ -592,13 +440,11 @@ class TaackPlmTaskPanel(object):
         if children:
 
             for child in children:
-
                 self.scan_object_for_links(
                     child,
                     documents,
                     visited_documents
                 )
-
 
     def add_linked_document(
             self,
@@ -652,8 +498,6 @@ class TaackPlmTaskPanel(object):
             visited_documents
         )
 
-
-
     def refresh_part_list(self):
 
         self.form.List.clear()
@@ -667,7 +511,6 @@ class TaackPlmTaskPanel(object):
         print("======================================")
 
         for doc in documents:
-
             print(
                 doc.Name +
                 " / " +
@@ -682,7 +525,7 @@ class TaackPlmTaskPanel(object):
         )
 
         print("======================================")
-        
+
     def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
@@ -691,21 +534,20 @@ class TaackPlmTaskPanel(object):
 
     def accept(self):
         print('Accept')
-    #    if not self.po.connected:
-    #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
-    #        return
-    #    try:
-    #        self.upload_current_active_doc()
-    #        FreeCADGui.Control.closeDialog()
-    #    except ValueError as e:
-    #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... " + str(e))+"\n")
-    #    except:
-    #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... Try to reconnect")+"\n")
-    #        self.po.connected = False
-    #        self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
-    #        self.form.connectButton.setEnabled(True)
-    #        self.form.connectButton.setText('DisConnected')
-
+        #    if not self.po.connected:
+        #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
+        #        return
+        #    try:
+        #        self.upload_current_active_doc()
+        #        FreeCADGui.Control.closeDialog()
+        #    except ValueError as e:
+        #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... " + str(e))+"\n")
+        #    except:
+        #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... Try to reconnect")+"\n")
+        #        self.po.connected = False
+        #        self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
+        #        self.form.connectButton.setEnabled(True)
+        #        self.form.connectButton.setText('DisConnected')
 
         print("Closing Taack PLM panel")
         FreeCADGui.Control.closeDialog()
@@ -747,7 +589,8 @@ class TaackPlmTaskPanel(object):
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
         self.save_preferences()
         try:
-            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data, timeout=5)
+            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,
+                                                  timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
                 self.po.user = self.form.userEdit.text()
@@ -761,18 +604,17 @@ class TaackPlmTaskPanel(object):
                 print(r.json()["message"])
                 self.po.connected = False
         except:
-            FreeCAD.Console.PrintWarning(translate("TaackPlm","Can't connect to the intranet.")+"\n")
-
+            FreeCAD.Console.PrintWarning(translate("TaackPlm", "Can't connect to the intranet.") + "\n")
 
     def upload_current_active_doc(self):
-        
+
         self.form.List.clear()
         self.form.uploadProgress.setValue(0)
         self.form.uploadButton.setEnabled(False)
         self.form.uploadButton.setText("Uploading...")
-        
+
         if not self.po.connected:
-            FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
+            FreeCAD.Console.PrintWarning(translate("TaackPlm", "Not connected.") + "\n")
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
@@ -834,7 +676,6 @@ class TaackPlmTaskPanel(object):
             QtGui.QApplication.processEvents()
 
         return bucket
-
 
     def create_doc_protobuf(self, obj, bucket):
 
@@ -917,7 +758,6 @@ class TaackPlmTaskPanel(object):
         except Exception:
             return {}
 
-
     def _save_modified_baseline(self, baseline):
         param = App.ParamGet(
             "User parameter:BaseApp/Preferences/TaackPLM"
@@ -927,7 +767,6 @@ class TaackPlmTaskPanel(object):
             "ModifiedFileBaseline",
             json.dumps(baseline)
         )
-
 
     def _get_assembly_baseline(self, assembly_doc):
         baseline = self._get_modified_baseline()
@@ -939,13 +778,11 @@ class TaackPlmTaskPanel(object):
 
         return baseline.get(os.path.abspath(assembly_file), {})
 
-
     def _get_file_mtime_ns(self, filename):
         try:
             return os.stat(filename).st_mtime_ns
         except (OSError, TypeError):
             return None
-
 
     def _document_was_modified(self, doc, assembly_doc):
         """
@@ -954,19 +791,14 @@ class TaackPlmTaskPanel(object):
         """
 
         filename = getattr(doc, "FileName", "")
-
         if not filename:
             return False
-
         filename = os.path.abspath(filename)
-
         current_mtime = self._get_file_mtime_ns(filename)
-
         if current_mtime is None:
             return False
 
         baseline = self._get_assembly_baseline(assembly_doc)
-
         previous_mtime = baseline.get(filename)
 
         # No baseline means this document has never been successfully
@@ -994,19 +826,13 @@ class TaackPlmTaskPanel(object):
             plm_link.linkClaimChild = obj.LinkClaimChild
 
             if obj.LinkCopyOnChange == 'Disabled':
-                plm_link.linkCopyOnChange = (
-                    PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
-                )
+                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
 
             elif obj.LinkCopyOnChange == 'Enabled':
-                plm_link.linkCopyOnChange = (
-                    PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
-                )
+                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
 
             elif obj.LinkCopyOnChange == 'Owned':
-                plm_link.linkCopyOnChange = (
-                    PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
-                )
+                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
 
             plm_link.linkTransform = obj.LinkTransform
 
@@ -1017,33 +843,20 @@ class TaackPlmTaskPanel(object):
 
             f = self.create_doc_protobuf(
                 linked_doc,
-                bucket
+               bucket
             )
-
             if f is None:
                 return None
 
             plm_link.plmFile = f
-
-            bucket.links[
-                linked_doc.Name
-            ].CopyFrom(plm_link)
+            bucket.links[linked_doc.Name].CopyFrom(plm_link)
 
         except Exception as e:
-
-            print(
-                "createLinkProtobuf Error: " +
-                str(e)
-            )
-
-            raise ValueError(
-                "createLinkProtobuf Error: " +
-                str(e)
-            )
+            print("createLinkProtobuf Error: " + str(e))
+            raise ValueError("createLinkProtobuf Error: " + str(e))
 
         return linked_doc.Name
 
 
 if FreeCAD.GuiUp:
-
     FreeCADGui.addCommand('TaackPLM_Intranet', CommandTaackPlm())
