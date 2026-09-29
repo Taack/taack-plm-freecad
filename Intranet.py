@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import zipfile
+import math
 import uuid
 import time
 import hashlib
@@ -599,38 +600,38 @@ class TaackPlmTaskPanel(object):
             self.form.uploadButton.setText("Upload")
             return False
 
-        b = self.create_bucket_protobuf()
+        # b = self.create_bucket_protobuf()
+        #
+        #  # Serialize the protobuf to disk.
+        # with open("fc_proto", "wb") as f:
+        #     f.write(b.SerializeToString())
 
-         # Serialize the protobuf to disk.
-        with open("fc_proto", "wb") as f:
-            f.write(b.SerializeToString())
-
-        # Open the file for upload.
-        f2 = open("fc_proto", "rb")
+        # # Open the file for upload.
+        # f2 = open("fc_proto", "rb")
 
         # Do not change the progress bar while preparing the upload.
         self.form.uploadProgress.setRange(0, 100)
-        self.form.uploadProgress.setValue(10)
+        self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setFormat("Uploading...")
         QtGui.QApplication.processEvents()
 
-        try:
-            self.form.uploadProgress.setValue(30)
-            QtGui.QApplication.processEvents()
-            r = self.po.taackIntranetSession.post(
-                url=self.po.url + 'plm/uploadProto',
-                files={'proto.bin': f2},
-                data={"ajax": "true"}
-            )
-        finally:
-            f2.close()
-            self.form.uploadProgress.setValue(60)
-            QtGui.QApplication.processEvents()
-        if r.json()["success"]:
-
-            self.form.uploadProgress.setValue(100)
-            self.form.uploadProgress.setFormat("Upload complete")
-            QtGui.QApplication.processEvents()
+        # try:
+        #     self.form.uploadProgress.setValue(30)
+        #     QtGui.QApplication.processEvents()
+        #     r = self.po.taackIntranetSession.post(
+        #         url=self.po.url + 'plm/uploadProto',
+        #         files={'proto.bin': f2},
+        #         data={"ajax": "true"}
+        #     )
+        # finally:
+        #     f2.close()
+        #     self.form.uploadProgress.setValue(60)
+        #     QtGui.QApplication.processEvents()
+        #
+        # if r.json()["success"]:
+        #     self.form.uploadProgress.setValue(100)
+        #     self.form.uploadProgress.setFormat("Upload complete")
+        #     QtGui.QApplication.processEvents()
 
         self.avoidLoop = set()
         self.shaOneMap = dict()
@@ -642,7 +643,12 @@ class TaackPlmTaskPanel(object):
                              ) as zip_archive:
 
             zip_archive.writestr("proto.bin", b.SerializeToString())
+            progress = 10
+            self.form.uploadProgress.setValue(progress)
+            inc = math.floor(len(self.shaOneMap.items()) / 90)
             for eShaOne, filename in self.shaOneMap.items():
+                progress += inc
+                self.form.uploadProgress.setValue(progress)
                 zip_archive.write(filename, eShaOne)
 
         data = {"ajax": 'true'}
@@ -719,9 +725,8 @@ class TaackPlmTaskPanel(object):
     def create_bucket_protobuf(self):
 
         print("createBucketProtobuf")
-
+        self.shaOneMap = dict()
         parts = self.get_upload_documents()
-
         bucket = PlmBuf.Bucket()
 
         for part in parts:
