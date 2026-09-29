@@ -687,6 +687,28 @@ class TaackPlmTaskPanel(object):
 
         return False
 
+    def create_thumbnail(self, filename):
+        try:
+            # Read compressed file
+            zfile = zipfile.ZipFile(filename)
+            files = zfile.namelist()
+
+            # Check whether we have a FreeCAD document
+            if "Document.xml" not in files:
+                print(input_file, " doesn't look like a FreeCAD file")
+                return None
+
+            # Read thumbnail from file or use default icon
+            image = "thumbnails/Thumbnail.png"
+            if image in files:
+                image = zfile.read(image)
+            else:
+                return None
+
+            return image
+
+        except Exception:
+            print("Error creating FreeCAD thumbnail for file ", input_file)
 
     def confirm_large_upload(self, documents):
         total_bytes = 0
@@ -774,6 +796,7 @@ class TaackPlmTaskPanel(object):
                         plm_file.externalLink.append(lp)
 
             # plm_file.fileContent = open(obj.FileName, 'rb').read()
+            plm_file.filePreview = self.create_thumbnail(obj.FileName)
             bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
             self.shaOneMap[plm_file.sha1hex] = obj.FileName
 
