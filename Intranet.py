@@ -127,10 +127,6 @@ class TaackPlmTaskPanel(object):
 
         self.form.List.addItem(label)
 
-    def update_progress(self, current, total):
-        if total > 0:
-            percent = int((current / total) * 100)
-            self.form.uploadProgress.setValue(percent)
 
     def get_upload_parts(self):
         """
@@ -566,8 +562,7 @@ class TaackPlmTaskPanel(object):
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
         self.save_preferences()
         try:
-            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,
-                                                  timeout=5)
+            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
                 self.po.user = self.form.userEdit.text()
@@ -577,6 +572,7 @@ class TaackPlmTaskPanel(object):
                 self.form.connectButton.setEnabled(False)
                 self.form.forkButton.setEnabled(True)
                 self.form.connectButton.setText('Connected')
+                QtCore.QTimer.singleShot(1000, lambda: self.form.tabWidget.setCurrentWidget(self.form.checkInTab))
             else:
                 print(r.json()["message"])
                 self.po.connected = False
@@ -595,6 +591,46 @@ class TaackPlmTaskPanel(object):
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
+          
+        documents = self.get_upload_documents()
+
+        if not self.confirm_large_upload(documents):
+            self.form.uploadButton.setEnabled(True)
+            self.form.uploadButton.setText("Upload")
+            return False
+
+        b = self.create_bucket_protobuf()
+
+         # Serialize the protobuf to disk.
+        with open("fc_proto", "wb") as f:
+            f.write(b.SerializeToString())
+
+        # Open the file for upload.
+        f2 = open("fc_proto", "rb")
+
+        # Do not change the progress bar while preparing the upload.
+        self.form.uploadProgress.setRange(0, 100)
+        self.form.uploadProgress.setValue(10)
+        self.form.uploadProgress.setFormat("Uploading...")
+        QtGui.QApplication.processEvents()
+
+        try:
+            self.form.uploadProgress.setValue(30)
+            QtGui.QApplication.processEvents()
+            r = self.po.taackIntranetSession.post(
+                url=self.po.url + 'plm/uploadProto',
+                files={'proto.bin': f2},
+                data={"ajax": "true"}
+            )
+        finally:
+            f2.close()
+            self.form.uploadProgress.setValue(60)
+            QtGui.QApplication.processEvents()
+        if r.json()["success"]:
+
+            self.form.uploadProgress.setValue(100)
+            self.form.uploadProgress.setFormat("Upload complete")
+            QtGui.QApplication.processEvents()
 
         self.avoidLoop = set()
         self.shaOneMap = dict()
@@ -645,23 +681,51 @@ class TaackPlmTaskPanel(object):
 
         return False
 
+
+    def confirm_large_upload(self, documents):
+        total_bytes = 0
+
+        for doc in documents:
+            filename = getattr(doc, "FileName", "")
+            if not filename:
+                continue
+
+            try:
+                total_bytes += os.path.getsize(filename)
+            except OSError:
+                pass
+
+        total_mb = total_bytes / (1024 * 1024)
+
+        # Warn about uploads large uploads. This is set to 500mb
+        if total_mb <= 500:
+            return True
+
+        message = (
+            "This upload contains approximately "
+            f"{total_mb:.2f} MB of FreeCAD files.\n\n"
+            "This may require a significant amount of RAM to upload\n\n"
+            "Do you want to continue?"
+        )
+
+        result = QtGui.QMessageBox.warning(self.form, "Large Upload", message, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+
+        return result == QtGui.QMessageBox.Yes
+
+
+
     ### FreeCAD <-> protobuf conversion tools
 
     def create_bucket_protobuf(self):
+
         print("createBucketProtobuf")
 
         parts = self.get_upload_documents()
-        total = len(parts)
-        current = 0
 
         bucket = PlmBuf.Bucket()
 
         for part in parts:
             self.create_doc_protobuf(part, bucket)
-
-            current += 1
-            self.update_progress(current, total)
-            QtGui.QApplication.processEvents()
 
         return bucket
 
