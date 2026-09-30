@@ -625,7 +625,7 @@ class TaackPlmTaskPanel(object):
         try:
             r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto', files={'proto.bin': f2}, data=data)
             f2.close()
-
+            os.remove(zip_filename)
             respBytes = BytesIO(r.content).read()
             respBucket = PlmBuf.Bucket()
             respBucket.ParseFromString(respBytes)
@@ -657,6 +657,8 @@ class TaackPlmTaskPanel(object):
                         try:
                             f2 = open(zip_filename, 'rb')
                             r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip', files={'proto.bin': f2}, data=data)
+                            f2.close()
+                            os.remove(zip_filename)
                             respBytes = BytesIO(r.content).read()
                             respBucket = PlmBuf.Bucket()
                             respBucket.ParseFromString(respBytes)
