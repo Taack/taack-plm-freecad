@@ -611,64 +611,77 @@ class TaackPlmTaskPanel(object):
         self.shaOneMap = dict()
 
         b = self.create_bucket_protobuf()
-        with tempfile.SpooledTemporaryFile() as tmp_zip_proto:
-            with zipfile.ZipFile(file=tmp_zip_proto, mode='w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zip_archive:
+        tmp_zip_dir = tempfile.TemporaryDirectory()
+        print("tmp_zip_dir: " + tmp_zip_dir.name)
+        tmp_zip_proto = os.path.join(tmp_zip_dir.name, 'proto.zip')
+        print("tmp_zip_proto: " + str(tmp_zip_proto))
+        with zipfile.ZipFile(tmp_zip_proto, 'w') as zip_proto_archive:
 
-                zip_archive.writestr("proto.bin", b.SerializeToString())
-                progress = 10
-                self.form.uploadProgress.setValue(progress)
+            print("zip_proto_archive: " + str(zip_proto_archive))
 
-            data = {"ajax": 'true'}
-            tmp_zip_proto.seek(0)
-            try:
-                r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto', files={'proto.bin': tmp_zip_proto}, data=data)
-                resp_bytes = BytesIO(r.content).read()
-                resp_bucket = PlmBuf.Bucket()
-                resp_bucket.ParseFromString(resp_bytes)
-                if resp_bucket.status == PlmBuf.ServerStatus.OK_PROTO:
-                    for serverSha1File in resp_bucket.serverSha1Files:
-                        if serverSha1File in self.shaOneMap:
-                            print("Removing:" + self.shaOneMap.pop(serverSha1File) + " from files to upload ... " + serverSha1File)
-                        else:
-                            print("NO KEY:" + serverSha1File + " ... ")
+            zip_proto_archive.writestr('proto.bin', b.SerializeToString())
+            progress = 10
+            self.form.uploadProgress.setValue(progress)
 
-                    nbItems = len(self.shaOneMap.items())
-                    nb16Interval = nbItems // 16
-                    print("nbItems: " + str(nbItems))
-                    inc = nbItems // 90
+        data = {"ajax": 'true'}
+        file_tmp_zip_proto = open(tmp_zip_proto, 'rb')
+        try:
+            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto', files={'proto.bin': file_tmp_zip_proto}, data=data)
+            resp_bytes = BytesIO(r.content).read()
+            resp_bucket = PlmBuf.Bucket()
+            resp_bucket.ParseFromString(resp_bytes)
+            if resp_bucket.status == PlmBuf.ServerStatus.OK_PROTO:
+                for serverSha1File in resp_bucket.serverSha1Files:
+                    if serverSha1File in self.shaOneMap:
+                        print("Removing:" + self.shaOneMap.pop(serverSha1File) + " from files to upload ... " + serverSha1File)
+                    else:
+                        print("NO KEY:" + serverSha1File + " ... ")
 
-                    if nbItems > 0:
-                        for i in range(nb16Interval + 1):
-                            with tempfile.SpooledTemporaryFile() as tmp_zip_files:
-                                with zipfile.ZipFile(file=tmp_zip_files, mode='w', compression=zipfile.ZIP_DEFLATED, compresslevel=9
-                                                     ) as zip_archive:
-                                    for j in range(16):
-                                        if len(self.shaOneMap) > 0:
-                                            progress += inc
-                                            self.form.uploadProgress.setValue(progress)
+                nbItems = len(self.shaOneMap.items())
+                nb16Interval = nbItems // 16
+                print("nbItems: " + str(nbItems))
+                inc = nbItems // 90
 
-                                            e_sha_one, filename = self.shaOneMap.popitem()
-                                            zip_archive.write(filename, e_sha_one)
-                                tmp_zip_files.seek(0)
-                                try:
-                                    r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip', files={'proto.bin': tmp_zip_files}, data=data)
-                                    resp_bytes = BytesIO(r.content).read()
-                                    resp_bucket = PlmBuf.Bucket()
-                                    resp_bucket.ParseFromString(resp_bytes)
-                                    if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
-                                        FreeCAD.Console.PrintWarning(translate("TaackPlm", "Problem uploading zip with files.") + "\n")
-                                except Exception as ex:
-                                    FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
-                                    self.po.connected = False
+                if nbItems > 0:
+                    for i in range(nb16Interval + 1):
+                        tmp_zip_files = os.path.join(tmp_zip_dir.name, 'files' + str(i) + '.zip')
+                        with zipfile.ZipFile(tmp_zip_files, 'w') as zip_archive:
 
-                    r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/reset', data=data)
-                    self.form.uploadProgress.setValue(100)
-                else:
-                    FreeCAD.Console.PrintWarning(translate("TaackPlm", "Message not successfully sent ... ") + "\n")
+                            print("zip_archive: " + str(zip_archive))
 
-            except Exception as e:
-                FreeCAD.Console.PrintWarning(translate("TaackPlm", "Exception during upload ... ") + str(e) + "\n")
-                self.form.connectButton.setEnabled(True)
+                            for j in range(16):
+                                if len(self.shaOneMap) > 0:
+                                    progress += inc
+                                    self.form.uploadProgress.setValue(progress)
+                                    e_sha_one, filename = self.shaOneMap.popitem()
+                                    zip_archive.write(filename, e_sha_one)
+
+                        file_tmp_zip_files = open(tmp_zip_files, 'rb')
+                        try:
+                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip', files={'proto.bin': file_tmp_zip_files}, data=data)
+                            resp_bytes = BytesIO(r.content).read()
+                            resp_bucket = PlmBuf.Bucket()
+                            resp_bucket.ParseFromString(resp_bytes)
+                            if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
+                                FreeCAD.Console.PrintWarning(translate("TaackPlm", "Problem uploading zip with files.") + "\n")
+                        except Exception as ex:
+                            FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
+                            self.po.connected = False
+                        finally:
+                            file_tmp_zip_files.close()
+                            os.remove(tmp_zip_files)
+                r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/reset', data=data)
+                self.form.uploadProgress.setValue(100)
+            else:
+                FreeCAD.Console.PrintWarning(translate("TaackPlm", "Message not successfully sent ... ") + "\n")
+
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(translate("TaackPlm", "Exception during upload ... ") + str(e) + "\n")
+            self.form.connectButton.setEnabled(True)
+        finally:
+            file_tmp_zip_proto.close()
+            os.remove(tmp_zip_proto)
+            tmp_zip_dir.cleanup()
         return None
 
     def create_thumbnail(self, filename):
