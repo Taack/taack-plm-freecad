@@ -20,193 +20,320 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
 
-```
- <!-- ===================================================== -->
- <!-- CHECK-IN TAB                                          -->
- <!-- ===================================================== -->
+     <!-- ===================================================== -->
+     <!-- CHECK-IN TAB                                          -->
+     <!-- ===================================================== -->
 
- <widget class="QWidget" name="checkInTab">
-  <attribute name="title">
-   <string>Check-in</string>
-  </attribute>
+     <widget class="QWidget" name="checkInTab">
+      <attribute name="title">
+       <string>Check-in</string>
+      </attribute>
 
-  <layout class="QGridLayout" name="checkInLayout">
+      <layout class="QGridLayout" name="checkInLayout">
 
-   <item row="0" column="0">
-    <widget class="QRadioButton" name="forkActive">
-     <property name="text">
-      <string>Duplicate Active Part</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
+       <item row="0" column="0">
+        <widget class="QRadioButton" name="forkActive">
+         <property name="text">
+          <string>Duplicate Active Part</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+
+       <item row="1" column="0">
+        <widget class="QRadioButton" name="forkAll">
+         <property name="text">
+          <string>Duplicate All Parts</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="2" column="0">
+        <widget class="QRadioButton" name="forkTouched">
+         <property name="text">
+          <string>Duplicate Modified Parts</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="3" column="0">
+        <widget class="QPushButton" name="forkButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Duplicate History</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="4" column="0">
+        <widget class="QListWidget" name="List">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>100</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+
+       <item row="5" column="0">
+        <widget class="QPushButton" name="uploadButton">
+         <property name="text">
+          <string>Upload</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="6" column="0">
+        <widget class="QProgressBar" name="uploadProgress">
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+
+      </layout>
+     </widget>
+
+
+     <!-- ===================================================== -->
+     <!-- BROWSE BY TAGS TAB                                    -->
+     <!-- ===================================================== -->
+
+     <widget class="QWidget" name="browseTab">
+      <attribute name="title">
+       <string>Browse by Tags</string>
+      </attribute>
+
+      <layout class="QGridLayout" name="browseLayout">
+
+       <!-- Get tag list -->
+       <item row="0" column="0" colspan="2">
+        <widget class="QPushButton" name="browseByTagButton">
+         <property name="text">
+          <string>Get Tag List</string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Browse tree -->
+       <item row="1" column="0" colspan="2">
+        <widget class="QTreeWidget" name="browseTree">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>150</height>
+          </size>
+         </property>
+         <column>
+          <property name="text">
+           <string>Part</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+
+       <!-- Bottom buttons -->
+       <item row="2" column="0">
+        <widget class="QPushButton" name="addToWorkspaceButton">
+         <property name="text">
+          <string>Add to Workspace</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="2" column="1">
+        <widget class="QPushButton" name="openInFreeCADButton">
+         <property name="text">
+          <string>Open in FreeCAD</string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Browse status/message -->
+       <item row="3" column="0" colspan="2">
+        <widget class="QLabel" name="browseMessageLabel">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+
+      </layout>
+     </widget>
+
+
+     <!-- ===================================================== -->
+     <!-- SEARCH PART TAB                                       -->
+     <!-- ===================================================== -->
+
+     <widget class="QWidget" name="searchPartTab">
+      <attribute name="title">
+       <string>Search Part</string>
+      </attribute>
+
+      <layout class="QGridLayout" name="searchPartLayout">
+
+       <!-- Search field -->
+       <item row="0" column="0">
+        <widget class="QLineEdit" name="partSearchEdit">
+         <property name="placeholderText">
+          <string>Search for a part...</string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Search button -->
+       <item row="0" column="1">
+        <widget class="QPushButton" name="searchPartButton">
+         <property name="text">
+          <string>Search</string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Search results -->
+       <item row="1" column="0" colspan="2">
+        <widget class="QListWidget" name="partSearchList">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>150</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Bottom buttons -->
+       <item row="2" column="0">
+        <widget class="QPushButton" name="addSearchPartButton">
+         <property name="text">
+          <string>Add to Workspace</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="2" column="1">
+        <widget class="QPushButton" name="openSearchPartButton">
+         <property name="text">
+          <string>Open in FreeCAD</string>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Search status/message -->
+       <item row="3" column="0" colspan="2">
+        <widget class="QLabel" name="searchPartMessageLabel">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+
+      </layout>
+     </widget>
+
+
+     <!-- ===================================================== -->
+     <!-- LOGIN TAB                                             -->
+     <!-- ===================================================== -->
+
+     <widget class="QWidget" name="loginTab">
+      <attribute name="title">
+       <string>Login</string>
+      </attribute>
+
+      <layout class="QGridLayout" name="loginLayout">
+
+       <item row="0" column="0">
+        <widget class="QLabel" name="urlLabel">
+         <property name="text">
+          <string>URL</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="urlEdit"/>
+       </item>
+
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>User</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="userEdit"/>
+       </item>
+
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Pass</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="passEdit">
+         <property name="echoMode">
+          <enum>QLineEdit::EchoMode::Password</enum>
+         </property>
+        </widget>
+       </item>
+
+       <!-- Workspace Directory -->
+       <item row="3" column="0">
+        <widget class="QLabel" name="workspaceLabel">
+         <property name="text">
+          <string>Workspace Directory</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="workspaceEdit"/>
+       </item>
+
+       <item row="4" column="0" colspan="2">
+        <widget class="QPushButton" name="connectButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+
+       <item row="5" column="0" colspan="2">
+        <spacer name="loginSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+
+      </layout>
+     </widget>
+
     </widget>
-   </item>
-
-   <item row="1" column="0">
-    <widget class="QRadioButton" name="forkAll">
-     <property name="text">
-      <string>Duplicate All Parts</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="2" column="0">
-    <widget class="QRadioButton" name="forkTouched">
-     <property name="text">
-      <string>Duplicate Modified Parts</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="3" column="0">
-    <widget class="QPushButton" name="forkButton">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="text">
-      <string>Duplicate History</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="4" column="0">
-    <widget class="QListWidget" name="List">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>100</height>
-      </size>
-     </property>
-    </widget>
-   </item>
-
-   <item row="5" column="0">
-    <widget class="QPushButton" name="uploadButton">
-     <property name="text">
-      <string>Upload</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="6" column="0">
-    <widget class="QProgressBar" name="uploadProgress">
-     <property name="value">
-      <number>0</number>
-     </property>
-    </widget>
-   </item>
-
-  </layout>
- </widget>
-
-
- <!-- ===================================================== -->
- <!-- BROWSE TAB                                            -->
- <!-- ===================================================== -->
-
- <widget class="QWidget" name="browseTab">
-  <attribute name="title">
-   <string>Browse</string>
-  </attribute>
-
-  <layout class="QGridLayout" name="browseLayout">
-   <item row="0" column="0">
-    <spacer name="browseSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-  </layout>
- </widget>
-
-
- <!-- ===================================================== -->
- <!-- LOGIN TAB                                             -->
- <!-- ===================================================== -->
-
- <widget class="QWidget" name="loginTab">
-  <attribute name="title">
-   <string>Login</string>
-  </attribute>
-
-  <layout class="QGridLayout" name="loginLayout">
-
-   <item row="0" column="0">
-    <widget class="QLabel" name="urlLabel">
-     <property name="text">
-      <string>URL</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="0" column="1">
-    <widget class="QLineEdit" name="urlEdit"/>
-   </item>
-
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>User</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="1" column="1">
-    <widget class="QLineEdit" name="userEdit"/>
-   </item>
-
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>Pass</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="2" column="1">
-    <widget class="QLineEdit" name="passEdit">
-     <property name="echoMode">
-      <enum>QLineEdit::EchoMode::Password</enum>
-     </property>
-    </widget>
-   </item>
-
-   <item row="3" column="0" colspan="2">
-    <widget class="QPushButton" name="connectButton">
-     <property name="text">
-      <string>Connect</string>
-     </property>
-    </widget>
-   </item>
-
-   <item row="4" column="0" colspan="2">
-    <spacer name="loginSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-
-  </layout>
- </widget>
-
-</widget>
-```
-
    </item>
 
   </layout>
