@@ -1482,8 +1482,15 @@ class TaackPlmTaskPanel(object):
                             os.remove(tmp_zip_files)
                 r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/reset', data=data)
                 self.form.uploadProgress.setValue(100)
+                self.form.uploadButton.setEnabled(True)
+                self.form.uploadButton.setText("Upload")
+                self.form.uploadProgress.setFormat("Part Uploaded")
             else:
                 FreeCAD.Console.PrintWarning(translate("TaackPlm", "Message not successfully sent ... ") + "\n")
+                self.form.uploadProgress.setValue(0)
+                self.form.uploadButton.setEnabled(True)
+                self.form.uploadButton.setText("Upload")
+                self.form.uploadProgress.setFormat("Part NOT Uploaded")
                 return None
 
         except Exception as e:
