@@ -1,12 +1,12 @@
 import FreeCAD
 import json
 import os
+import re
 import requests
 import zipfile
 import math
 import uuid
 import time
-import tempfile
 import hashlib
 from PySide import QtCore, QtGui
 from io import BytesIO
@@ -39,7 +39,7 @@ class CommandTaackPlm:
         self.connected = False
         self.user = self.settings.value("username", "Login")
         self.url = self.settings.value("url", "Server URL")
-        self.passwd = "ChangeIt"
+        self.passwd = ""
 
     def GetResources(self):
         return {'Pixmap': os.path.join(os.path.dirname(__file__), "icons", 'logo_taack.svg'),
@@ -70,6 +70,20 @@ class TaackPlmTaskPanel(object):
         self.po = po
         self.avoidLoop = set()
         self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__), 'taack-plm.ui'))
+
+        # Restore saved workspace directory
+        workspace = self.po.settings.value("workspace", "")
+
+        if workspace:
+            self.form.workspaceEdit.setText(workspace)
+
+        # Save workspace whenever the user changes it
+        QtCore.QObject.connect(
+            self.form.workspaceEdit,
+            QtCore.SIGNAL("textChanged(QString)"),
+            self.save_workspace
+        )
+
         # Select the Login tab when we are not connected.
         if not self.po.connected:
             self.form.tabWidget.setCurrentWidget(
@@ -94,16 +108,63 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.upload_current_active_doc
         )
+        QtCore.QObject.connect(
+            self.form.browseByTagButton,
+            QtCore.SIGNAL("pressed()"),
+            self.browse_by_tag
+        )
+        QtCore.QObject.connect(
+            self.form.browseTree,
+            QtCore.SIGNAL("itemClicked(QTreeWidgetItem*, int)"),
+            self.browse_tag_selected
+        )
+        QtCore.QObject.connect(
+            self.form.addToWorkspaceButton,
+            QtCore.SIGNAL("pressed()"),
+            self.add_to_workspace
+        )
 
+        QtCore.QObject.connect(
+            self.form.openInFreeCADButton,
+            QtCore.SIGNAL("pressed()"),
+            self.open_in_freecad
+        )
+
+        QtCore.QObject.connect(
+            self.form.addSearchPartButton,
+            QtCore.SIGNAL("pressed()"),
+            self.add_to_workspace
+        )
+
+        QtCore.QObject.connect(
+            self.form.openSearchPartButton,
+            QtCore.SIGNAL("pressed()"),
+            self.open_in_freecad
+        )
+        QtCore.QObject.connect(
+            self.form.searchPartButton,
+            QtCore.SIGNAL("pressed()"),
+            self.search_parts
+        )
+        QtCore.QObject.connect(
+            self.form.partSearchEdit,
+            QtCore.SIGNAL("returnPressed()"),
+            self.search_parts
+        )
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
-
+        self.browseShowingParts = False
+        
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
             self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
 
+    def save_workspace(self, workspace):
+        self.po.settings.setValue("workspace", workspace)
+        self.po.settings.sync()
+        
     def compute_file_shaOne(self, filePath):
         sha1 = hashlib.sha1()
         with open(filePath, 'rb') as f:
@@ -224,7 +285,7 @@ class TaackPlmTaskPanel(object):
             objects = list(doc.Objects)
         except Exception as e:
             print("Unable to read document objects: " + str(e)
-                  )
+            )
 
             return
 
@@ -560,6 +621,770 @@ class TaackPlmTaskPanel(object):
 
         print("======================================")
 
+    def add_to_workspace(self):
+        """
+        Download the selected PLM part into the user-defined workspace.
+        If the part is already in the workspace, skip the download.
+
+        Returns the path to the .FCStd file.
+        """
+
+        try:
+            selected_items = self.form.browseTree.selectedItems()
+
+            search_item = self.form.partSearchList.currentItem()
+
+            # If the Search Part tab is active, use its selected part.
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+
+                if search_item is None:
+                    self.form.searchPartMessageLabel.setText(
+                        "Please select a part first."
+                    )
+                    return None
+
+                item = search_item
+                part_id = item.data(
+                    QtCore.Qt.UserRole
+                )
+
+            # Otherwise use the Browse by Tags tree.
+            else:
+
+                if not selected_items:
+                    self.form.browseMessageLabel.setText(
+                        "Please select a part first."
+                    )
+                    return None
+
+                item = selected_items[0]
+
+                if not self.browseShowingParts:
+                    self.form.browseMessageLabel.setText(
+                        "Please select a part, not a tag."
+                    )
+                    return None
+
+                part_id = item.data(
+                    0,
+                    QtCore.Qt.UserRole
+                )
+
+            if part_id is None:
+                self.form.browseMessageLabel.setText(
+                    "The selected part does not have a valid ID."
+                )
+                return None
+
+            if not self.po.connected:
+                self.form.browseMessageLabel.setText(
+                    "Not connected to the PLM server."
+                )
+                return None
+
+            workspace = self.form.workspaceEdit.text().strip()
+
+            if not workspace:
+                self.form.browseMessageLabel.setText(
+                    "Please enter a workspace directory first."
+                )
+                return None
+
+            workspace = os.path.abspath(
+                os.path.expanduser(workspace)
+            )
+
+            if not os.path.exists(workspace):
+                try:
+                    os.makedirs(workspace)
+                except OSError as e:
+                    self.form.browseMessageLabel.setText(
+                        "Unable to create workspace directory: " +
+                        str(e)
+                    )
+                    return None
+
+            if not os.path.isdir(workspace):
+                self.form.browseMessageLabel.setText(
+                    "The workspace path is not a directory:\n" +
+                    workspace
+                )
+                return None
+
+            # ---------------------------------------------------------
+            # First check whether this part is already in the workspace
+            # ---------------------------------------------------------
+
+            existing_file = None
+
+            for root, dirs, files in os.walk(workspace):
+                for file_name in files:
+
+                    if not file_name.lower().endswith(".fcstd"):
+                        continue
+
+                    # Look for the part ID in the filename.
+                    if str(part_id) in file_name:
+                        existing_file = os.path.join(
+                            root,
+                            file_name
+                        )
+                        break
+
+                if existing_file:
+                    break
+
+            if existing_file:
+                self.form.browseMessageLabel.setText(
+                    "Part already exists in workspace. "
+                    "Download skipped."
+                )
+
+                FreeCAD.Console.PrintMessage(
+                    "Part already exists in workspace: " +
+                    existing_file +
+                    "\n"
+                )
+
+                return existing_file
+
+            # ---------------------------------------------------------
+            # Part is not already downloaded - download it
+            # ---------------------------------------------------------
+
+            self.form.browseMessageLabel.setText(
+                "Downloading part..."
+            )
+
+            base_url = self.form.urlEdit.text().strip()
+
+            if not base_url.endswith("/"):
+                base_url += "/"
+
+            url = base_url + "plm/downloadBinPart"
+
+            print(
+                "Downloading PLM part " +
+                str(part_id) +
+                " from: " +
+                url
+            )
+
+            response = self.po.taackIntranetSession.get(
+                url,
+                params={"id": part_id},
+                timeout=60,
+                stream=True
+            )
+
+            response.raise_for_status()
+
+            filename = None
+
+            content_disposition = response.headers.get(
+                "Content-Disposition"
+            )
+
+            if content_disposition:
+                match = re.search(
+                    r'filename="?([^"]+)"?',
+                    content_disposition
+                )
+
+                if match:
+                    filename = match.group(1)
+
+            if not filename:
+                filename = "plm_part_" + str(part_id) + ".zip"
+
+            filename = os.path.basename(filename)
+
+            zip_path = os.path.join(
+                workspace,
+                filename
+            )
+
+            # ---------------------------------------------------------
+            # Download ZIP
+            # ---------------------------------------------------------
+
+            with open(zip_path, "wb") as f:
+                for chunk in response.iter_content(
+                    chunk_size=1024 * 1024
+                ):
+                    if chunk:
+                        f.write(chunk)
+
+            print(
+                "Downloaded PLM part to: " +
+                zip_path
+            )
+
+            self.form.browseMessageLabel.setText(
+                "Extracting part..."
+            )
+
+            # ---------------------------------------------------------
+            # Extract ZIP
+            # ---------------------------------------------------------
+
+            with zipfile.ZipFile(zip_path, "r") as zip_file:
+                zip_file.extractall(workspace)
+
+            os.remove(zip_path)
+
+            # ---------------------------------------------------------
+            # Find the downloaded FCStd file
+            # ---------------------------------------------------------
+
+            freecad_file = None
+
+            for root, dirs, files in os.walk(workspace):
+                for file_name in files:
+                    if file_name.lower().endswith(".fcstd"):
+                        freecad_file = os.path.join(
+                            root,
+                            file_name
+                        )
+                        break
+
+                if freecad_file:
+                    break
+
+            if freecad_file is None:
+                raise ValueError(
+                    "No FreeCAD .FCStd file was found "
+                    "in the downloaded part."
+                )
+
+            self.form.browseMessageLabel.setText(
+                "Part added to workspace."
+            )
+
+            FreeCAD.Console.PrintMessage(
+                "Part added to workspace: " +
+                freecad_file +
+                "\n"
+            )
+
+            return freecad_file
+
+        except requests.exceptions.RequestException as e:
+
+            self.form.browseMessageLabel.setText(
+                "Unable to download part: " +
+                str(e)
+            )
+
+            FreeCAD.Console.PrintWarning(
+                "Unable to download part: " +
+                str(e) +
+                "\n"
+            )
+
+            return None
+
+        except zipfile.BadZipFile:
+
+            self.form.browseMessageLabel.setText(
+                "The server did not return a valid part ZIP file."
+            )
+
+            FreeCAD.Console.PrintWarning(
+                "The server did not return a valid part ZIP file.\n"
+            )
+
+            return None
+
+        except Exception as e:
+
+            self.form.browseMessageLabel.setText(
+                "Error adding part to workspace: " +
+                str(e)
+            )
+
+            FreeCAD.Console.PrintWarning(
+                "Error adding part to workspace: " +
+                str(e) +
+                "\n"
+            )
+
+            return None
+
+    def open_in_freecad(self):
+
+        try:
+
+            # Search Part tab
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+
+                if self.form.partSearchList.currentItem() is None:
+                    self.form.searchPartMessageLabel.setText(
+                        "Please select a part first."
+                    )
+                    return
+
+            # Browse by Tags tab
+            else:
+
+                selected_items = self.form.browseTree.selectedItems()
+
+                if not selected_items:
+                    self.form.browseMessageLabel.setText(
+                        "Please select a part first."
+                    )
+                    return
+
+                if not self.browseShowingParts:
+                    self.form.browseMessageLabel.setText(
+                        "Please select a part, not a tag."
+                    )
+                    return
+
+            # Use the same download/workspace function
+            freecad_file = self.add_to_workspace()
+
+            if not freecad_file:
+                return
+
+            if not os.path.exists(freecad_file):
+                raise ValueError(
+                    "The downloaded FreeCAD file does not exist:\n" +
+                    freecad_file
+                )
+
+            FreeCAD.openDocument(freecad_file)
+
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+                self.form.searchPartMessageLabel.setText(
+                    "Opened part in FreeCAD."
+                )
+            else:
+                self.form.browseMessageLabel.setText(
+                    "Opened part in FreeCAD."
+                )
+
+            FreeCAD.Console.PrintMessage(
+                "Opened FreeCAD document: " +
+                freecad_file +
+                "\n"
+            )
+
+        except Exception as e:
+
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+                self.form.searchPartMessageLabel.setText(
+                    "Error opening part in FreeCAD: " +
+                    str(e)
+                )
+            else:
+                self.form.browseMessageLabel.setText(
+                    "Error opening part in FreeCAD: " +
+                    str(e)
+                )
+
+            FreeCAD.Console.PrintWarning(
+                "Error opening part in FreeCAD: " +
+                str(e) +
+                "\n"
+            )
+
+    def search_parts(self):
+        """
+        Search for PLM parts by originalName and display
+        the results in the Search Part list.
+        """
+
+        self.form.partSearchList.clear()
+        self.form.searchPartMessageLabel.clear()
+
+        search_text = self.form.partSearchEdit.text().strip()
+
+        if not search_text:
+            self.form.searchPartMessageLabel.setText(
+                "Please enter a part name to search."
+            )
+            return
+
+        if not self.po.connected:
+            self.form.searchPartMessageLabel.setText(
+                "Not connected to the PLM server."
+            )
+            return
+
+        try:
+            base_url = self.form.urlEdit.text().strip()
+
+            if not base_url.endswith("/"):
+                base_url += "/"
+
+            url = base_url + "plmJson/searchParts"
+
+            response = self.po.taackIntranetSession.get(
+                url,
+                params={"originalName": search_text},
+                timeout=30
+            )
+
+            response.raise_for_status()
+
+            parts = response.json()
+
+            if not isinstance(parts, list):
+                raise ValueError(
+                    "The server returned an invalid parts list."
+                )
+
+            for part in parts:
+
+                if not isinstance(part, dict):
+                    continue
+
+                part_id = part.get("id")
+
+                # Prefer originalName for the visible text.
+                part_name = (
+                        part.get("originalName") or
+                        part.get("name") or
+                        part.get("label") or
+                        str(part_id)
+                )
+
+                item = QtGui.QListWidgetItem(
+                    str(part_name)
+                )
+
+                # Store the PLM part ID in the list item.
+                item.setData(
+                    QtCore.Qt.UserRole,
+                    part_id
+                )
+
+                # Keep the complete server result available.
+                item.setData(
+                    QtCore.Qt.UserRole + 1,
+                    part
+                )
+
+                self.form.partSearchList.addItem(item)
+
+            if self.form.partSearchList.count() == 0:
+                self.form.searchPartMessageLabel.setText(
+                    "No parts found."
+                )
+            else:
+                self.form.searchPartMessageLabel.setText(
+                    str(self.form.partSearchList.count()) +
+                    " part(s) found."
+                )
+
+        except requests.exceptions.RequestException as e:
+
+            self.form.searchPartMessageLabel.setText(
+                "Unable to search for parts: " + str(e)
+            )
+
+            FreeCAD.Console.PrintWarning(
+                "Unable to search for parts: " +
+                str(e) +
+                "\n"
+            )
+
+        except ValueError as e:
+
+            self.form.searchPartMessageLabel.setText(
+                "Invalid response from server: " +
+                str(e)
+            )
+
+        except Exception as e:
+
+            self.form.searchPartMessageLabel.setText(
+                "Error searching for parts: " +
+                str(e)
+            )
+
+            FreeCAD.Console.PrintWarning(
+                "Error searching for parts: " +
+                str(e) +
+                "\n"
+            )
+    def browse_tag_selected(self, item, column):
+
+        self.form.browseMessageLabel.clear()
+        # If the tree is currently showing parts, do not treat
+        # the selected part as a tag.
+        
+        if self.browseShowingParts:
+            return
+
+        try:
+            tag_id = item.data(0, QtCore.Qt.UserRole)
+
+            if tag_id is None:
+                return
+
+            if not self.po.connected:
+                QtGui.QMessageBox.warning(
+                    self.form,
+                    "Not Connected",
+                    "Not connected to the server."
+                )
+                return
+
+            base_url = self.po.url.rstrip("/") + "/"
+            url = base_url + "plmJson/partsByTag"
+
+            response = self.po.taackIntranetSession.get(
+                url,
+                params={"tagId": tag_id},
+                timeout=10
+            )
+
+            response.raise_for_status()
+
+            parts = response.json()
+
+            if not isinstance(parts, list):
+                raise ValueError("Server returned an invalid parts list.")
+
+            # We are now displaying parts instead of tags.
+            self.browseShowingParts = True
+
+            # Clear the tag list
+            self.form.browseTree.clear()
+
+            # Add parts
+            for part in parts:
+                if not isinstance(part, dict):
+                    continue
+
+                part_name = (
+                    part.get("name")
+                    or part.get("originalName")
+                    or part.get("label")
+                    or str(part.get("id", ""))
+                )
+
+                tree_item = QtGui.QTreeWidgetItem(
+                    [str(part_name)]
+                )
+
+                if part.get("id") is not None:
+                    tree_item.setData(
+                        0,
+                        QtCore.Qt.UserRole,
+                        part.get("id")
+                    )
+
+                self.form.browseTree.addTopLevelItem(tree_item)
+
+        except requests.RequestException as e:
+            QtGui.QMessageBox.warning(
+                self.form,
+                "Browse Error",
+                "Could not retrieve parts from the server:\n" + str(e)
+            )
+
+        except ValueError as e:
+            QtGui.QMessageBox.warning(
+                self.form,
+                "Browse Error",
+                str(e)
+            )
+
+        except Exception as e:
+            QtGui.QMessageBox.warning(
+                self.form,
+                "Browse Error",
+                "An error occurred while retrieving parts:\n" + str(e)
+            )
+
+    def browse_by_tag(self):
+        """
+        Load all PLM tags from /plmJson/tags and display them
+        in the Browse tree using the parent/name hierarchy.
+        """
+
+        # Clear the existing tree
+
+        self.browseShowingParts = False
+
+        self.form.browseTree.clear()
+        self.form.browseMessageLabel.clear()
+        if not self.po.connected:
+            FreeCAD.Console.PrintWarning(
+                translate("TaackPlm", "Not connected to the PLM server.") + "\n"
+            )
+            return
+
+        try:
+            # Make sure the URL ends with /
+            base_url = self.form.urlEdit.text().strip()
+
+            if not base_url.endswith("/"):
+                base_url += "/"
+
+            url = base_url + "plmJson/tags"
+
+            print("Loading PLM tags from: " + url)
+
+            response = self.po.taackIntranetSession.get(
+                url=url,
+                timeout=10
+            )
+
+            response.raise_for_status()
+
+            tags = response.json()
+
+            print("Received PLM tags:")
+            print(tags)
+
+            if not isinstance(tags, list):
+                FreeCAD.Console.PrintWarning(
+                    translate(
+                        "TaackPlm",
+                        "Invalid tag response from server."
+                    ) + "\n"
+                )
+                return
+
+            # ---------------------------------------------------------
+            # First pass:
+            # Create a tree item for every tag.
+            #
+            # We use the tag NAME as the key because the JSON parent
+            # field contains the parent's name.
+            # ---------------------------------------------------------
+
+            tag_items = {}
+
+            for tag in tags:
+
+                if not isinstance(tag, dict):
+                    continue
+
+                tag_id = tag.get("id")
+                tag_name = tag.get("name")
+
+                if tag_name is None:
+                    continue
+
+                tag_name = str(tag_name)
+
+                item = QtGui.QTreeWidgetItem()
+                item.setText(0, tag_name)
+
+                # Store the PLM tag ID in the tree item.
+                item.setData(
+                    0,
+                    QtCore.Qt.UserRole,
+                    tag_id
+                )
+
+                tag_items[tag_name] = item
+
+            # ---------------------------------------------------------
+            # Second pass:
+            # Connect each tag to its parent.
+            #
+            # Example:
+            #
+            # {
+            #     "name": "BC250_case_3",
+            #     "parent": "Project"
+            # }
+            #
+            # becomes:
+            #
+            # Project
+            #   └── BC250_case_3
+            # ---------------------------------------------------------
+
+            for tag in tags:
+
+                if not isinstance(tag, dict):
+                    continue
+
+                tag_name = tag.get("name")
+
+                if tag_name is None:
+                    continue
+
+                tag_name = str(tag_name)
+
+                item = tag_items.get(tag_name)
+
+                if item is None:
+                    continue
+
+                parent_name = tag.get("parent")
+
+                # No parent means this is a top-level tag.
+                if parent_name is None or str(parent_name).strip() == "":
+                    self.form.browseTree.addTopLevelItem(item)
+                    continue
+
+                parent_name = str(parent_name)
+
+                # Find the parent by name.
+                parent_item = tag_items.get(parent_name)
+
+                if parent_item is not None:
+                    parent_item.addChild(item)
+                else:
+                    # Parent does not exist in the response.
+                    # Keep the tag visible as a top-level item.
+                    print(
+                        "Parent tag not found: " +
+                        parent_name +
+                        " for tag: " +
+                        tag_name
+                    )
+
+                    self.form.browseTree.addTopLevelItem(item)
+
+            # Expand the complete tree.
+            self.form.browseTree.expandAll()
+
+            print(
+                "Loaded " +
+                str(len(tag_items)) +
+                " PLM tags."
+            )
+
+        except requests.exceptions.RequestException as e:
+
+            FreeCAD.Console.PrintWarning(
+                translate(
+                    "TaackPlm",
+                    "Unable to load PLM tags: "
+                ) + str(e) + "\n"
+            )
+
+        except ValueError as e:
+
+            FreeCAD.Console.PrintWarning(
+                translate(
+                    "TaackPlm",
+                    "Invalid JSON returned by PLM tag endpoint: "
+                ) + str(e) + "\n"
+            )
+
+        except Exception as e:
+
+            FreeCAD.Console.PrintWarning(
+                translate(
+                    "TaackPlm",
+                    "Error loading PLM tags: "
+                ) + str(e) + "\n"
+            )
+
+
+
+
+
     def login_intranet(self):
         print('login Intranet ...')
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
@@ -594,7 +1419,7 @@ class TaackPlmTaskPanel(object):
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
-
+          
         documents = self.get_upload_documents()
 
         if not self.confirm_large_upload(documents):
@@ -611,27 +1436,27 @@ class TaackPlmTaskPanel(object):
         self.shaOneMap = dict()
 
         b = self.create_bucket_protobuf()
-        tmp_zip_dir = tempfile.TemporaryDirectory()
-        print("tmp_zip_dir: " + tmp_zip_dir.name)
-        tmp_zip_proto = os.path.join(tmp_zip_dir.name, 'proto.zip')
-        print("tmp_zip_proto: " + str(tmp_zip_proto))
-        with zipfile.ZipFile(tmp_zip_proto, 'w') as zip_proto_archive:
 
-            print("zip_proto_archive: " + str(zip_proto_archive))
+        zip_filename = "tmp-fc-proto" + str(round(time.time() * 1000)) + ".zip"
+        with zipfile.ZipFile(file=zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+                             ) as zip_archive:
 
-            zip_proto_archive.writestr('proto.bin', b.SerializeToString())
+            zip_archive.writestr("proto.bin", b.SerializeToString())
             progress = 10
             self.form.uploadProgress.setValue(progress)
 
         data = {"ajax": 'true'}
-        file_tmp_zip_proto = open(tmp_zip_proto, 'rb')
+        f2 = open(zip_filename, 'rb')
+
         try:
-            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto', files={'proto.bin': file_tmp_zip_proto}, data=data)
-            resp_bytes = BytesIO(r.content).read()
-            resp_bucket = PlmBuf.Bucket()
-            resp_bucket.ParseFromString(resp_bytes)
-            if resp_bucket.status == PlmBuf.ServerStatus.OK_PROTO:
-                for serverSha1File in resp_bucket.serverSha1Files:
+            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto', files={'proto.bin': f2}, data=data)
+            f2.close()
+            os.remove(zip_filename)
+            respBytes = BytesIO(r.content).read()
+            respBucket = PlmBuf.Bucket()
+            respBucket.ParseFromString(respBytes)
+            if respBucket.status == PlmBuf.ServerStatus.OK_PROTO:
+                for serverSha1File in respBucket.serverSha1Files:
                     if serverSha1File in self.shaOneMap:
                         print("Removing:" + self.shaOneMap.pop(serverSha1File) + " from files to upload ... " + serverSha1File)
                     else:
@@ -644,32 +1469,31 @@ class TaackPlmTaskPanel(object):
 
                 if nbItems > 0:
                     for i in range(nb16Interval + 1):
-                        tmp_zip_files = os.path.join(tmp_zip_dir.name, 'files' + str(i) + '.zip')
-                        with zipfile.ZipFile(tmp_zip_files, 'w') as zip_archive:
-
-                            print("zip_archive: " + str(zip_archive))
-
+                        zip_filename = "tmp-fc-16files" + str(i) + "-" + str(round(time.time() * 1000)) + ".zip"
+                        with zipfile.ZipFile(file=zip_filename, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+                                             ) as zip_archive:
                             for j in range(16):
                                 if len(self.shaOneMap) > 0:
                                     progress += inc
                                     self.form.uploadProgress.setValue(progress)
-                                    e_sha_one, filename = self.shaOneMap.popitem()
-                                    zip_archive.write(filename, e_sha_one)
 
-                        file_tmp_zip_files = open(tmp_zip_files, 'rb')
+                                    eShaOne, filename = self.shaOneMap.popitem()
+                                    zip_archive.write(filename, eShaOne)
+
                         try:
-                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip', files={'proto.bin': file_tmp_zip_files}, data=data)
-                            resp_bytes = BytesIO(r.content).read()
-                            resp_bucket = PlmBuf.Bucket()
-                            resp_bucket.ParseFromString(resp_bytes)
-                            if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
+                            f2 = open(zip_filename, 'rb')
+                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip', files={'proto.bin': f2}, data=data)
+                            f2.close()
+                            os.remove(zip_filename)
+                            respBytes = BytesIO(r.content).read()
+                            respBucket = PlmBuf.Bucket()
+                            respBucket.ParseFromString(respBytes)
+                            if respBucket.status != PlmBuf.ServerStatus.OK_FILES:
                                 FreeCAD.Console.PrintWarning(translate("TaackPlm", "Problem uploading zip with files.") + "\n")
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
                             self.po.connected = False
-                        finally:
-                            file_tmp_zip_files.close()
-                            os.remove(tmp_zip_files)
+
                 r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/reset', data=data)
                 self.form.uploadProgress.setValue(100)
             else:
@@ -678,11 +1502,6 @@ class TaackPlmTaskPanel(object):
         except Exception as e:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Exception during upload ... ") + str(e) + "\n")
             self.form.connectButton.setEnabled(True)
-        finally:
-            file_tmp_zip_proto.close()
-            os.remove(tmp_zip_proto)
-            tmp_zip_dir.cleanup()
-        return None
 
     def create_thumbnail(self, filename):
         try:
