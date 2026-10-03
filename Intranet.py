@@ -1473,6 +1473,7 @@ class TaackPlmTaskPanel(object):
                             resp_bucket.ParseFromString(resp_bytes)
                             if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
                                 FreeCAD.Console.PrintWarning(translate("TaackPlm", "Problem uploading zip with files.") + "\n")
+                                return None
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
                             self.po.connected = False
@@ -1483,6 +1484,7 @@ class TaackPlmTaskPanel(object):
                 self.form.uploadProgress.setValue(100)
             else:
                 FreeCAD.Console.PrintWarning(translate("TaackPlm", "Message not successfully sent ... ") + "\n")
+                return None
 
         except Exception as e:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Exception during upload ... ") + str(e) + "\n")
