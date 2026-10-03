@@ -96,7 +96,10 @@ class TaackPlmTaskPanel(object):
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
+        self.form.disconnectButton.setEnabled(False)
+
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
+        QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
         QtCore.QObject.connect(self.form.forkActive, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
         QtCore.QObject.connect(self.form.forkAll, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
@@ -581,22 +584,6 @@ class TaackPlmTaskPanel(object):
         self.po.settings.setValue("url", self.po.url)
 
     def accept(self):
-        print('Accept')
-        #    if not self.po.connected:
-        #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Not connected.")+"\n")
-        #        return
-        #    try:
-        #        self.upload_current_active_doc()
-        #        FreeCADGui.Control.closeDialog()
-        #    except ValueError as e:
-        #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... " + str(e))+"\n")
-        #    except:
-        #        FreeCAD.Console.PrintWarning(translate("TaackPlm","Cannot Upload ... Try to reconnect")+"\n")
-        #        self.po.connected = False
-        #        self.form.connectButton.setStyleSheet('QPushButton {color: red;}')
-        #        self.form.connectButton.setEnabled(True)
-        #        self.form.connectButton.setText('DisConnected')
-
         print("Closing Taack PLM panel")
         FreeCADGui.Control.closeDialog()
 
@@ -1375,7 +1362,13 @@ class TaackPlmTaskPanel(object):
 
 
 
-
+    def logout_intranet(self):
+        print('logout Intranet ...')
+        self.po.taackIntranetSession.get(url=self.form.urlEdit.text() + 'logout', timeout=5)
+        self.form.disconnectButton.setEnabled(False)
+        self.form.connectButton.setStyleSheet('QPushButton {color: black;}')
+        self.form.connectButton.setEnabled(True)
+        self.form.connectButton.setText('Connect')
 
     def login_intranet(self):
         print('login Intranet ...')
@@ -1392,6 +1385,7 @@ class TaackPlmTaskPanel(object):
                 self.form.connectButton.setEnabled(False)
                 self.form.forkButton.setEnabled(True)
                 self.form.connectButton.setText('Connected')
+                self.form.disconnectButton.setEnabled(True)
                 QtCore.QTimer.singleShot(1000, lambda: self.form.tabWidget.setCurrentWidget(self.form.checkInTab))
             else:
                 print(r.json()["message"])

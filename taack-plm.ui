@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <ui version="4.0">
  <class>Form</class>
  <widget class="QWidget" name="Form">
@@ -14,23 +13,17 @@
   <property name="windowTitle">
    <string>Taack PLM</string>
   </property>
-
   <layout class="QGridLayout" name="gridLayout">
-
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
-
-     <!-- ===================================================== -->
-     <!-- CHECK-IN TAB                                          -->
-     <!-- ===================================================== -->
-
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
      <widget class="QWidget" name="checkInTab">
       <attribute name="title">
        <string>Check-in</string>
       </attribute>
-
       <layout class="QGridLayout" name="checkInLayout">
-
        <item row="0" column="0">
         <widget class="QRadioButton" name="forkActive">
          <property name="text">
@@ -41,7 +34,6 @@
          </property>
         </widget>
        </item>
-
        <item row="1" column="0">
         <widget class="QRadioButton" name="forkAll">
          <property name="text">
@@ -49,7 +41,6 @@
          </property>
         </widget>
        </item>
-
        <item row="2" column="0">
         <widget class="QRadioButton" name="forkTouched">
          <property name="text">
@@ -57,7 +48,6 @@
          </property>
         </widget>
        </item>
-
        <item row="3" column="0">
         <widget class="QPushButton" name="forkButton">
          <property name="enabled">
@@ -68,7 +58,6 @@
          </property>
         </widget>
        </item>
-
        <item row="4" column="0">
         <widget class="QListWidget" name="List">
          <property name="minimumSize">
@@ -79,7 +68,6 @@
          </property>
         </widget>
        </item>
-
        <item row="5" column="0">
         <widget class="QPushButton" name="uploadButton">
          <property name="text">
@@ -87,7 +75,6 @@
          </property>
         </widget>
        </item>
-
        <item row="6" column="0">
         <widget class="QProgressBar" name="uploadProgress">
          <property name="value">
@@ -95,23 +82,13 @@
          </property>
         </widget>
        </item>
-
       </layout>
      </widget>
-
-
-     <!-- ===================================================== -->
-     <!-- BROWSE BY TAGS TAB                                    -->
-     <!-- ===================================================== -->
-
      <widget class="QWidget" name="browseTab">
       <attribute name="title">
        <string>Browse by Tags</string>
       </attribute>
-
       <layout class="QGridLayout" name="browseLayout">
-
-       <!-- Get tag list -->
        <item row="0" column="0" colspan="2">
         <widget class="QPushButton" name="browseByTagButton">
          <property name="text">
@@ -119,8 +96,6 @@
          </property>
         </widget>
        </item>
-
-       <!-- Browse tree -->
        <item row="1" column="0" colspan="2">
         <widget class="QTreeWidget" name="browseTree">
          <property name="minimumSize">
@@ -136,8 +111,6 @@
          </column>
         </widget>
        </item>
-
-       <!-- Bottom buttons -->
        <item row="2" column="0">
         <widget class="QPushButton" name="addToWorkspaceButton">
          <property name="text">
@@ -145,7 +118,6 @@
          </property>
         </widget>
        </item>
-
        <item row="2" column="1">
         <widget class="QPushButton" name="openInFreeCADButton">
          <property name="text">
@@ -153,8 +125,6 @@
          </property>
         </widget>
        </item>
-
-       <!-- Browse status/message -->
        <item row="3" column="0" colspan="2">
         <widget class="QLabel" name="browseMessageLabel">
          <property name="text">
@@ -165,23 +135,13 @@
          </property>
         </widget>
        </item>
-
       </layout>
      </widget>
-
-
-     <!-- ===================================================== -->
-     <!-- SEARCH PART TAB                                       -->
-     <!-- ===================================================== -->
-
      <widget class="QWidget" name="searchPartTab">
       <attribute name="title">
        <string>Search Part</string>
       </attribute>
-
       <layout class="QGridLayout" name="searchPartLayout">
-
-       <!-- Search field -->
        <item row="0" column="0">
         <widget class="QLineEdit" name="partSearchEdit">
          <property name="placeholderText">
@@ -189,8 +149,6 @@
          </property>
         </widget>
        </item>
-
-       <!-- Search button -->
        <item row="0" column="1">
         <widget class="QPushButton" name="searchPartButton">
          <property name="text">
@@ -198,8 +156,6 @@
          </property>
         </widget>
        </item>
-
-       <!-- Search results -->
        <item row="1" column="0" colspan="2">
         <widget class="QListWidget" name="partSearchList">
          <property name="minimumSize">
@@ -210,8 +166,6 @@
          </property>
         </widget>
        </item>
-
-       <!-- Bottom buttons -->
        <item row="2" column="0">
         <widget class="QPushButton" name="addSearchPartButton">
          <property name="text">
@@ -219,7 +173,6 @@
          </property>
         </widget>
        </item>
-
        <item row="2" column="1">
         <widget class="QPushButton" name="openSearchPartButton">
          <property name="text">
@@ -227,8 +180,6 @@
          </property>
         </widget>
        </item>
-
-       <!-- Search status/message -->
        <item row="3" column="0" colspan="2">
         <widget class="QLabel" name="searchPartMessageLabel">
          <property name="text">
@@ -239,46 +190,13 @@
          </property>
         </widget>
        </item>
-
       </layout>
      </widget>
-
-
-     <!-- ===================================================== -->
-     <!-- LOGIN TAB                                             -->
-     <!-- ===================================================== -->
-
      <widget class="QWidget" name="loginTab">
       <attribute name="title">
        <string>Login</string>
       </attribute>
-
       <layout class="QGridLayout" name="loginLayout">
-
-       <item row="0" column="0">
-        <widget class="QLabel" name="urlLabel">
-         <property name="text">
-          <string>URL</string>
-         </property>
-        </widget>
-       </item>
-
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="urlEdit"/>
-       </item>
-
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>User</string>
-         </property>
-        </widget>
-       </item>
-
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="userEdit"/>
-       </item>
-
        <item row="2" column="0">
         <widget class="QLabel" name="label_3">
          <property name="text">
@@ -286,40 +204,20 @@
          </property>
         </widget>
        </item>
-
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="passEdit">
-         <property name="echoMode">
-          <enum>QLineEdit::EchoMode::Password</enum>
-         </property>
-        </widget>
-       </item>
-
-       <!-- Workspace Directory -->
-       <item row="3" column="0">
-        <widget class="QLabel" name="workspaceLabel">
+       <item row="0" column="0">
+        <widget class="QLabel" name="urlLabel">
          <property name="text">
-          <string>Workspace Directory</string>
+          <string>URL</string>
          </property>
         </widget>
        </item>
-
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="workspaceEdit"/>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="userEdit"/>
        </item>
-
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="connectButton">
-         <property name="text">
-          <string>Connect</string>
-         </property>
-        </widget>
-       </item>
-
-       <item row="5" column="0" colspan="2">
+       <item row="6" column="0" colspan="2">
         <spacer name="loginSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -329,16 +227,53 @@
          </property>
         </spacer>
        </item>
-
+       <item row="3" column="0">
+        <widget class="QLabel" name="workspaceLabel">
+         <property name="text">
+          <string>Workspace Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="passEdit">
+         <property name="echoMode">
+          <enum>QLineEdit::EchoMode::Password</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>User</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="workspaceEdit"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="urlEdit"/>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QPushButton" name="connectButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QPushButton" name="disconnectButton">
+         <property name="text">
+          <string>Disconnect</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
-
     </widget>
    </item>
-
   </layout>
  </widget>
-
  <resources/>
  <connections/>
 </ui>
