@@ -51,10 +51,11 @@ class CommandTaackPlm:
     def IsActive(self):
         """Here you can define if the command must be active or not (greyed) if certain conditions
         are met or not. This function is optional."""
-        if FreeCAD.activeDocument():
-            return True
-        else:
-            return False
+        # if FreeCAD.activeDocument():
+        #     return True
+        # else:
+        #     return False
+        return True
 
     def Activated(self):
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
