@@ -96,8 +96,6 @@ class TaackPlmTaskPanel(object):
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
-        self.form.disconnectButton.setEnabled(False)
-
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
@@ -1365,7 +1363,6 @@ class TaackPlmTaskPanel(object):
     def logout_intranet(self):
         print('logout Intranet ...')
         self.po.taackIntranetSession.get(url=self.form.urlEdit.text() + 'logout', timeout=5)
-        self.form.disconnectButton.setEnabled(False)
         self.form.connectButton.setStyleSheet('QPushButton {color: black;}')
         self.form.connectButton.setEnabled(True)
         self.form.connectButton.setText('Connect')
