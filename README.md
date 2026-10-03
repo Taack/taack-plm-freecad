@@ -25,22 +25,43 @@ Under Freecad:
 
 The first time, you will be prompted for entering the server URL, along with your user credentials:
 
-![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-gui2.webp)
+![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/blender-taack-plm-addons2.webp)
 
-1. Workbench Icon
-2. Main Command
-3. Server URL Input
-4. User Login Input
-5. User Password Input
-6. Connect Button
-7. Duplicate History Options
-8. Duplicate History Button
+1. Server URL Input
+2. User Login Input
+3. User Password Input
+4. Path where model from the server will be put
 
 Clicking on **Connect** Button.
 
 If the **Connect** Button turns disabled, you are connected to your Intranet Server.
 
+### Upload a model and Links to other features from other files
+
+Once you are connected
+
+* Ensure a file is selected (if not already done, save it before uploading)
+* click on the **Taack** icon (2nd point in the previous screenshot)
+* click on the **Ok** Button
+
+All linked files will be uploaded. There are 2 situations from here, for each file:
+* Either the file Uid does not exist on the server
+    * The model will be uploaded as a new one
+* Either the file Uid does exist on the server
+    * The existing model will be updated
+
+### Search And Download Model from the Server
+
+![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-search-part.webp)
+
+1. Search part tab
+2. Top Assemblies
+
 ### Duplicate Options
+
+![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/blender-taack-plm-addons2-duplicate.webp)
+
+1. Duplicate Options
 
 #### Duplicate Active Part
 
@@ -60,19 +81,6 @@ The part duplicated appear in details view:
 
 1. Duplicated Parts tab
 
-### Upload a model and Links to other features from other files
-
-Once you are connected
-
-* Ensure a file is selected (if not already done, save it before uploading)
-* click on the **Taack** icon (2nd point in the previous screenshot)
-* click on the **Ok** Button
-
-All linked files will be uploaded. There are 2 situations from here, for each file:
-* Either the file Uid does not exist on the server
-  * The model will be uploaded as a new one
-* Either the file Uid does exist on the server
-  * The existing model will be updated
 
 ### Download a previous version
 
