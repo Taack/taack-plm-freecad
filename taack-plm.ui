@@ -307,7 +307,7 @@
        <item row="9" column="0">
         <widget class="QLabel" name="serverVersionLabel">
          <property name="text">
-          <string>Server Version:</string>
+          <string>Server Build:</string>
          </property>
         </widget>
        </item>
