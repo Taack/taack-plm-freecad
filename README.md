@@ -42,13 +42,15 @@ Once you are connected
 
 * Ensure a file is selected (if not already done, save it before uploading)
 * click on the **Taack** icon (2nd point in the previous screenshot)
-* click on the **Ok** Button
+* click on the **Check-In** tab
+* click on the **Upload** Button
 
-All linked files will be uploaded. There are 2 situations from here, for each file:
+All linked files will be uploaded. There are 3 situations from here, for each file (if nothing is being duplicated):
 * Either the file Uid does not exist on the server
     * The model will be uploaded as a new one
 * Either the file Uid does exist on the server
-    * The existing model will be updated
+    * The existing model will be updated **IF** no modified features or files are in **LOCKED** status
+    * If one file changed by the modification is in **LOCKED** status, the update will be refused by the server
 
 ### Search And Download Model from the Server
 
