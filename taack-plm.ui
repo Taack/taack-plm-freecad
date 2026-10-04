@@ -248,9 +248,27 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="workspaceEdit"/>
-       </item>
+      <item row="3" column="1">
+       <layout class="QHBoxLayout" name="workspaceLayout">
+        <item>
+         <widget class="QLineEdit" name="workspaceEdit">
+          <property name="placeholderText">
+           <string>Select workspace directory...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="workspaceBrowseButton">
+          <property name="text">
+           <string>🔍</string>
+          </property>
+          <property name="toolTip">
+           <string>Select workspace directory</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
        <item row="0" column="1">
         <widget class="QLineEdit" name="urlEdit"/>
        </item>
