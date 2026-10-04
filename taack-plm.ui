@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>413</width>
-    <height>445</height>
+    <height>520</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,6 +19,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
+     <!-- Check-in tab -->
      <widget class="QWidget" name="checkInTab">
       <attribute name="title">
        <string>Check-in</string>
@@ -48,17 +49,17 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
-        <widget class="QPushButton" name="forkButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="text">
-          <string>Duplicate History</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
+      <item row="2" column="1">
+       <widget class="QLabel" name="uploadSizeLabel">
+        <property name="text">
+         <string>Data to upload: 0 MB</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+       <item row="3" column="0" colspan="2">
         <widget class="QListWidget" name="List">
          <property name="minimumSize">
           <size>
@@ -68,14 +69,14 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="4" column="0" colspan="2">
         <widget class="QPushButton" name="uploadButton">
          <property name="text">
           <string>Upload</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="0" colspan="2">
         <widget class="QProgressBar" name="uploadProgress">
          <property name="value">
           <number>0</number>
@@ -84,6 +85,7 @@
        </item>
       </layout>
      </widget>
+     <!-- Browse tab -->
      <widget class="QWidget" name="browseTab">
       <attribute name="title">
        <string>Browse by Tags</string>
@@ -137,6 +139,7 @@
        </item>
       </layout>
      </widget>
+     <!-- Search Part tab -->
      <widget class="QWidget" name="searchPartTab">
       <attribute name="title">
        <string>Search Part</string>
@@ -192,18 +195,12 @@
        </item>
       </layout>
      </widget>
+     <!-- Login tab -->
      <widget class="QWidget" name="loginTab">
       <attribute name="title">
        <string>Login</string>
       </attribute>
       <layout class="QGridLayout" name="loginLayout">
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Pass</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="urlLabel">
          <property name="text">
@@ -211,10 +208,145 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="urlEdit"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>User</string>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="1">
         <widget class="QLineEdit" name="userEdit"/>
        </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Pass</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="passEdit">
+         <property name="echoMode">
+          <enum>QLineEdit::EchoMode::Password</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="workspaceLabel">
+         <property name="text">
+          <string>Workspace Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <layout class="QHBoxLayout" name="workspaceLayout">
+         <item>
+          <widget class="QPushButton" name="workspaceBrowseButton">
+           <property name="text">
+            <string>🔍</string>
+           </property>
+           <property name="toolTip">
+            <string>Select workspace directory</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QLineEdit" name="workspaceEdit">
+         <property name="placeholderText">
+          <string>Select workspace directory...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QPushButton" name="connectButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
        <item row="6" column="0" colspan="2">
+        <widget class="QPushButton" name="disconnectButton">
+         <property name="text">
+          <string>Disconnect</string>
+         </property>
+        </widget>
+       </item>
+       <!-- Server Information -->
+       <item row="7" column="0" colspan="2">
+         <spacer name="serverInfoSpacer">
+          <property name="orientation">
+           <enum>Qt::Orientation::Vertical</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Policy::Fixed</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+       </item>
+       <item row="8" column="0" colspan="2">
+        <widget class="QLabel" name="serverInfoTitleLabel">
+         <property name="text">
+          <string>Server Information</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="serverVersionLabel">
+         <property name="text">
+          <string>Server Version:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1">
+        <widget class="QLabel" name="serverVersionValue">
+         <property name="text">
+          <string>Unknown</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="messagingProtocolVersionLabel">
+         <property name="text">
+          <string>Messaging Protocol:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1">
+        <widget class="QLabel" name="messagingProtocolVersionValue">
+         <property name="text">
+          <string>Unknown</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="maximumFileUploadSizeLabel">
+         <property name="text">
+          <string>Maximum Upload Size:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QLabel" name="maximumFileUploadSizeValue">
+         <property name="text">
+          <string>Unknown</string>
+         </property>
+        </widget>
+       </item>
+       <item row="12" column="0" colspan="2">
         <spacer name="loginSpacer">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
@@ -226,65 +358,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="workspaceLabel">
-         <property name="text">
-          <string>Workspace Directory</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="passEdit">
-         <property name="echoMode">
-          <enum>QLineEdit::EchoMode::Password</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>User</string>
-         </property>
-        </widget>
-       </item>
-      <item row="3" column="1">
-       <layout class="QHBoxLayout" name="workspaceLayout">
-        <item>
-         <widget class="QLineEdit" name="workspaceEdit">
-          <property name="placeholderText">
-           <string>Select workspace directory...</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="workspaceBrowseButton">
-          <property name="text">
-           <string>🔍</string>
-          </property>
-          <property name="toolTip">
-           <string>Select workspace directory</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="urlEdit"/>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="connectButton">
-         <property name="text">
-          <string>Connect</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QPushButton" name="disconnectButton">
-         <property name="text">
-          <string>Disconnect</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
