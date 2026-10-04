@@ -155,6 +155,11 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("returnPressed()"),
             self.search_parts
         )
+        QtCore.QObject.connect(
+            self.form.workspaceBrowseButton,
+            QtCore.SIGNAL("pressed()"),
+            self.browse_workspace
+        )
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
@@ -168,7 +173,37 @@ class TaackPlmTaskPanel(object):
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
-
+    def browse_workspace(self):
+        current_workspace = self.form.workspaceEdit.text().strip()
+    
+        if current_workspace and os.path.isdir(current_workspace):
+            start_directory = current_workspace
+        else:
+            start_directory = os.path.expanduser("~")
+    
+        workspace = QtGui.QFileDialog.getExistingDirectory(
+            self.form,
+            "Select Workspace Directory",
+            start_directory,
+            QtGui.QFileDialog.ShowDirsOnly
+        )
+    
+        if workspace:
+            workspace = os.path.abspath(workspace)
+    
+            self.form.workspaceEdit.setText(workspace)
+    
+            self.po.settings.setValue(
+                "workspace",
+                workspace
+            )
+            self.po.settings.sync()
+    
+            FreeCAD.Console.PrintMessage(
+                "Workspace directory: "
+                + workspace
+                + "\n"
+            )    
     def compute_file_shaOne(self, filePath):
         sha1 = hashlib.sha1()
         with open(filePath, 'rb') as f:
