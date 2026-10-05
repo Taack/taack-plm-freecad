@@ -159,6 +159,12 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.browse_workspace
         )
+        QtCore.QObject.connect(
+            self.form.tabWidget,
+            QtCore.SIGNAL("currentChanged(int)"),
+            self.tab_changed
+        )
+        
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
@@ -167,7 +173,10 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
             self.form.connectButton.setText('Connected')
-
+    def tab_changed(self, index):
+        """Run actions when a tab is selected."""
+        if self.form.tabWidget.currentWidget() == self.form.loginTab:
+            self.get_server_info()
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
