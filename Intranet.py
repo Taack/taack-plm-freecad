@@ -164,11 +164,21 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("currentChanged(int)"),
             self.tab_changed
         )
-        
+        QtCore.QObject.connect(
+            self.form.addToAssemblyButton,
+            QtCore.SIGNAL("pressed()"),
+            self.add_to_assembly
+        )
+        QtCore.QObject.connect(
+            self.form.addSearchPartToAssemblyButton,
+            QtCore.SIGNAL("pressed()"),
+            self.add_to_assembly
+        )
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
-
+        self.update_add_to_assembly_button()
+        
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
@@ -177,6 +187,191 @@ class TaackPlmTaskPanel(object):
         """Run actions when a tab is selected."""
         if self.form.tabWidget.currentWidget() == self.form.loginTab:
             self.get_server_info()
+    def update_add_to_assembly_button(self):
+        """
+        Enable Add to Assembly only when the active document
+        contains a FreeCAD 1.1 Assembly.
+        """
+
+        enabled = self.is_active_assembly()
+
+        if hasattr(self.form, "addToAssemblyButton"):
+            self.form.addToAssemblyButton.setEnabled(enabled)
+
+            if enabled:
+                self.form.addToAssemblyButton.setToolTip(
+                    "Add the selected PLM part to the active Assembly."
+                )
+            else:
+                self.form.addToAssemblyButton.setToolTip(
+                    "Available only when a FreeCAD 1.1 Assembly is active."
+                )
+
+        if hasattr(self.form, "addSearchPartToAssemblyButton"):
+            self.form.addSearchPartToAssemblyButton.setEnabled(enabled)
+
+            if enabled:
+                self.form.addSearchPartToAssemblyButton.setToolTip(
+                    "Add the selected PLM part to the active Assembly."
+                )
+            else:
+                self.form.addSearchPartToAssemblyButton.setToolTip(
+                    "Available only when a FreeCAD 1.1 Assembly is active."
+                )
+    def get_active_assembly(self):
+        """
+        Return the active FreeCAD 1.1 Assembly::AssemblyObject.
+
+        Returns None when the active document is not a FreeCAD Assembly.
+        """
+        doc = FreeCAD.ActiveDocument
+
+        if doc is None:
+            return None
+
+        for obj in doc.Objects:
+            try:
+                if obj.isDerivedFrom("Assembly::AssemblyObject"):
+                    return obj
+            except Exception:
+                pass
+
+        return None
+    def add_to_assembly(self):
+
+        assembly_doc = FreeCAD.ActiveDocument
+        assembly = self.get_active_assembly()
+
+        if assembly_doc is None or assembly is None:
+            FreeCAD.Console.PrintWarning(
+                "Add to Assembly cancelled: "
+                "the active document is not a FreeCAD 1.1 Assembly.\n"
+            )
+            return
+
+        try:
+            # Remember the assembly before downloading/opening anything.
+            assembly_doc_name = assembly_doc.Name
+
+            # Download the selected PLM part using the existing code.
+            freecad_file = self.add_to_workspace()
+
+            if not freecad_file:
+                return
+
+            if not os.path.isfile(freecad_file):
+                raise ValueError(
+                    "The downloaded FreeCAD file does not exist:\n"
+                    + freecad_file
+                )
+
+            # Open the downloaded part.
+            part_doc = FreeCAD.openDocument(freecad_file)
+
+            if part_doc is None:
+                raise ValueError(
+                    "Could not open the downloaded FreeCAD part."
+                )
+
+            # Find a suitable object to use as the component.
+            part_object = None
+
+            # Prefer an Assembly, Part, or Body as the component root.
+            for obj in part_doc.Objects:
+                try:
+                    if obj.isDerivedFrom("Assembly::AssemblyObject"):
+                        part_object = obj
+                        break
+
+                    if obj.isDerivedFrom("App::Part"):
+                        part_object = obj
+                        break
+
+                    if obj.isDerivedFrom("PartDesign::Body"):
+                        part_object = obj
+                        break
+
+                except Exception:
+                    pass
+
+            # If none of the preferred containers exists, look for a
+            # normal geometric object.
+            if part_object is None:
+                for obj in part_doc.Objects:
+                    try:
+                        if obj.isDerivedFrom("Part::Feature"):
+                            part_object = obj
+                            break
+                    except Exception:
+                        pass
+
+            if part_object is None:
+                raise ValueError(
+                    "Could not find a suitable component in the downloaded part."
+                )
+
+            # Restore the assembly document as the active document.
+            FreeCAD.setActiveDocument(assembly_doc_name)
+
+            assembly_doc = FreeCAD.getDocument(assembly_doc_name)
+
+            if assembly_doc is None:
+                raise ValueError(
+                    "Could not restore the active Assembly document."
+                )
+
+            # Create the Assembly component link.
+            link_name = "PLM_" + part_object.Name
+
+            link = assembly_doc.addObject(
+                "App::Link",
+                link_name
+            )
+
+            link.Label = part_object.Label
+            link.setLink(part_object)
+
+            # Assembly::AssemblyObject derives from App::Part,
+            # so the link can be added directly to the assembly.
+            assembly.addObject(link)
+
+            assembly_doc.recompute()
+
+            FreeCAD.Console.PrintMessage(
+                "Added PLM part to Assembly: "
+                + part_object.Label
+                + "\n"
+            )
+
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+                self.form.searchPartMessageLabel.setText(
+                    "Part added to Assembly."
+                )
+            else:
+                self.form.browseMessageLabel.setText(
+                    "Part added to Assembly."
+                )
+
+        except Exception as e:
+
+            message = "Error adding part to Assembly: " + str(e)
+
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+                self.form.searchPartMessageLabel.setText(message)
+            else:
+                self.form.browseMessageLabel.setText(message)
+
+            FreeCAD.Console.PrintError(message + "\n")
+
+    def is_active_assembly(self):
+        """
+        Return True only when the active document contains
+        a FreeCAD 1.1 Assembly workbench assembly.
+        """
+        return self.get_active_assembly() is not None
+        
+        
+        
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
