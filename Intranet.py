@@ -98,7 +98,6 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
-        QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
         QtCore.QObject.connect(self.form.forkActive, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
         QtCore.QObject.connect(self.form.forkAll, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
 
@@ -167,7 +166,6 @@ class TaackPlmTaskPanel(object):
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
-            self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
 
     def save_workspace(self, workspace):
@@ -588,7 +586,8 @@ class TaackPlmTaskPanel(object):
         self.form.uploadProgress.setValue(0)
 
         documents = self.get_upload_documents()
-
+        # Update the amount of data to upload
+        self.update_upload_size(documents)
         print("")
         print("======================================")
         print("DOCUMENTS SHOWN IN UPLOAD LIST")
@@ -609,7 +608,37 @@ class TaackPlmTaskPanel(object):
         )
 
         print("======================================")
+    def update_upload_size(self, documents=None):
+        """Update the upload size label with the total size of the selected documents."""
 
+        if documents is None:
+            documents = self.get_upload_documents()
+
+        total_bytes = 0
+
+        for doc in documents:
+            filename = getattr(doc, "FileName", "")
+
+            if not filename:
+                continue
+
+            try:
+                total_bytes += os.path.getsize(filename)
+            except OSError:
+                pass
+
+        # Convert bytes to MB
+        total_mb = total_bytes / (1024 * 1024)
+
+        if total_mb >= 1024:
+            size_text = f"{total_mb / 1024:.1f} GB"
+        else:
+            size_text = f"{total_mb:.0f} MB"
+
+        self.form.uploadSizeLabel.setText(
+            "Data to upload: " + size_text
+        )
+        
     def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
@@ -1228,6 +1257,7 @@ class TaackPlmTaskPanel(object):
             FreeCAD.Console.PrintWarning(
                 translate("TaackPlm", "Not connected to the PLM server.") + "\n"
             )
+            self.get_server_info()
             return
 
         try:
@@ -1410,18 +1440,19 @@ class TaackPlmTaskPanel(object):
             r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
+                self.get_server_info()
                 self.po.user = self.form.userEdit.text()
                 self.po.url = self.form.urlEdit.text()
                 self.po.passwd = self.form.passEdit.text()
                 self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
                 self.form.connectButton.setEnabled(False)
-                self.form.forkButton.setEnabled(True)
                 self.form.connectButton.setText('Connected')
                 self.form.disconnectButton.setEnabled(True)
                 QtCore.QTimer.singleShot(1000, lambda: self.form.tabWidget.setCurrentWidget(self.form.checkInTab))
             else:
                 print(r.json()["message"])
                 self.po.connected = False
+                self.get_server_info()
         except:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Can't connect to the intranet.") + "\n")
 
@@ -1434,6 +1465,7 @@ class TaackPlmTaskPanel(object):
 
         if not self.po.connected:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Not connected.") + "\n")
+            self.get_server_info()
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
@@ -1511,6 +1543,7 @@ class TaackPlmTaskPanel(object):
                                 return None
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
+                            self.get_server_info()
                             self.po.connected = False
                         finally:
                             file_tmp_zip_files.close()
@@ -1604,6 +1637,7 @@ class TaackPlmTaskPanel(object):
         for part in parts:
             self.create_doc_protobuf(part, bucket)
 
+        self.form.uploadSizeLabel
         return bucket
 
     def create_doc_protobuf(self, obj, bucket):
@@ -1760,7 +1794,42 @@ class TaackPlmTaskPanel(object):
             raise ValueError("createLinkProtobuf Error: " + str(e))
 
         return linked_doc.Name
+        
+    def get_server_info(self):
+        try:
+            url = self.po.url + 'plmJson/serverInfo'
 
+            response = self.po.taackIntranetSession.get(url, timeout=10)
+            response.raise_for_status()
+
+            server_info = response.json()
+
+            server_version = server_info.get("serverVersion", "Unknown")
+            protocol_version = server_info.get("messagingProtocolVersion", "Unknown")
+            maximum_upload_size = server_info.get("maximumFileUploadSize")
+
+            self.form.serverVersionValue.setText(str(server_version))
+            self.form.messagingProtocolVersionValue.setText(str(protocol_version))
+
+            if maximum_upload_size is not None:
+                # Convert bytes to MB
+                size_mb = maximum_upload_size / (1024 * 1024)
+
+                if size_mb >= 1024:
+                    size_text = f"{size_mb / 1024:.1f} GB"
+                else:
+                    size_text = f"{size_mb:.0f} MB"
+
+                self.form.maximumFileUploadSizeValue.setText(size_text)
+            else:
+                self.form.maximumFileUploadSizeValue.setText("Unknown")
+
+        except Exception as e:
+            print("Unable to get server information:", e)
+
+            self.form.serverVersionValue.setText("Unknown")
+            self.form.messagingProtocolVersionValue.setText("Unknown")
+            self.form.maximumFileUploadSizeValue.setText("Unknown")
 
 if FreeCAD.GuiUp:
     FreeCADGui.addCommand('TaackPLM_Intranet', CommandTaackPlm())
