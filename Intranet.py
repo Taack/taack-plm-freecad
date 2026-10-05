@@ -187,6 +187,8 @@ class TaackPlmTaskPanel(object):
         """Run actions when a tab is selected."""
         if self.form.tabWidget.currentWidget() == self.form.loginTab:
             self.get_server_info()
+        elif self.form.tabWidget.currentWidget() == self.form.browseTab:
+            self.browse_by_tag()
     def update_add_to_assembly_button(self):
         """
         Enable Add to Assembly only when the active document
@@ -1652,7 +1654,6 @@ class TaackPlmTaskPanel(object):
                 self.form.connectButton.setEnabled(False)
                 self.form.connectButton.setText('Connected')
                 self.form.disconnectButton.setEnabled(True)
-                QtCore.QTimer.singleShot(1000, lambda: self.form.tabWidget.setCurrentWidget(self.form.checkInTab))
             else:
                 print(r.json()["message"])
                 self.po.connected = False
