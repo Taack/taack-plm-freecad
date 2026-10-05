@@ -98,7 +98,6 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
-        QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
         QtCore.QObject.connect(self.form.forkActive, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
         QtCore.QObject.connect(self.form.forkAll, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
 
@@ -160,16 +159,219 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.browse_workspace
         )
+        QtCore.QObject.connect(
+            self.form.tabWidget,
+            QtCore.SIGNAL("currentChanged(int)"),
+            self.tab_changed
+        )
+        QtCore.QObject.connect(
+            self.form.addToAssemblyButton,
+            QtCore.SIGNAL("pressed()"),
+            self.add_to_assembly
+        )
+        QtCore.QObject.connect(
+            self.form.addSearchPartToAssemblyButton,
+            QtCore.SIGNAL("pressed()"),
+            self.add_to_assembly
+        )
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
-
+        self.update_add_to_assembly_button()
+        
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
-            self.form.forkButton.setEnabled(True)
             self.form.connectButton.setText('Connected')
+    def tab_changed(self, index):
+        """Run actions when a tab is selected."""
+        if self.form.tabWidget.currentWidget() == self.form.loginTab:
+            self.get_server_info()
+    def update_add_to_assembly_button(self):
+        """
+        Enable Add to Assembly only when the active document
+        contains a FreeCAD 1.1 Assembly.
+        """
 
+        enabled = self.is_active_assembly()
+
+        if hasattr(self.form, "addToAssemblyButton"):
+            self.form.addToAssemblyButton.setEnabled(enabled)
+
+            if enabled:
+                self.form.addToAssemblyButton.setToolTip(
+                    "Add the selected PLM part to the active Assembly."
+                )
+            else:
+                self.form.addToAssemblyButton.setToolTip(
+                    "Available only when a FreeCAD 1.1 Assembly is active."
+                )
+
+        if hasattr(self.form, "addSearchPartToAssemblyButton"):
+            self.form.addSearchPartToAssemblyButton.setEnabled(enabled)
+
+            if enabled:
+                self.form.addSearchPartToAssemblyButton.setToolTip(
+                    "Add the selected PLM part to the active Assembly."
+                )
+            else:
+                self.form.addSearchPartToAssemblyButton.setToolTip(
+                    "Available only when a FreeCAD 1.1 Assembly is active."
+                )
+    def get_active_assembly(self):
+        """
+        Return the active FreeCAD 1.1 Assembly::AssemblyObject.
+
+        Returns None when the active document is not a FreeCAD Assembly.
+        """
+        doc = FreeCAD.ActiveDocument
+
+        if doc is None:
+            return None
+
+        for obj in doc.Objects:
+            try:
+                if obj.isDerivedFrom("Assembly::AssemblyObject"):
+                    return obj
+            except Exception:
+                pass
+
+        return None
+    def add_to_assembly(self):
+
+        assembly_doc = FreeCAD.ActiveDocument
+        assembly = self.get_active_assembly()
+
+        if assembly_doc is None or assembly is None:
+            FreeCAD.Console.PrintWarning(
+                "Add to Assembly cancelled: "
+                "the active document is not a FreeCAD 1.1 Assembly.\n"
+            )
+            return
+
+        try:
+            # Remember the assembly before downloading/opening anything.
+            assembly_doc_name = assembly_doc.Name
+
+            # Download the selected PLM part using the existing code.
+            freecad_file = self.add_to_workspace()
+
+            if not freecad_file:
+                return
+
+            if not os.path.isfile(freecad_file):
+                raise ValueError(
+                    "The downloaded FreeCAD file does not exist:\n"
+                    + freecad_file
+                )
+
+            # Open the downloaded part.
+            part_doc = FreeCAD.openDocument(freecad_file)
+
+            if part_doc is None:
+                raise ValueError(
+                    "Could not open the downloaded FreeCAD part."
+                )
+
+            # Find a suitable object to use as the component.
+            part_object = None
+
+            # Prefer an Assembly, Part, or Body as the component root.
+            for obj in part_doc.Objects:
+                try:
+                    if obj.isDerivedFrom("Assembly::AssemblyObject"):
+                        part_object = obj
+                        break
+
+                    if obj.isDerivedFrom("App::Part"):
+                        part_object = obj
+                        break
+
+                    if obj.isDerivedFrom("PartDesign::Body"):
+                        part_object = obj
+                        break
+
+                except Exception:
+                    pass
+
+            # If none of the preferred containers exists, look for a
+            # normal geometric object.
+            if part_object is None:
+                for obj in part_doc.Objects:
+                    try:
+                        if obj.isDerivedFrom("Part::Feature"):
+                            part_object = obj
+                            break
+                    except Exception:
+                        pass
+
+            if part_object is None:
+                raise ValueError(
+                    "Could not find a suitable component in the downloaded part."
+                )
+
+            # Restore the assembly document as the active document.
+            FreeCAD.setActiveDocument(assembly_doc_name)
+
+            assembly_doc = FreeCAD.getDocument(assembly_doc_name)
+
+            if assembly_doc is None:
+                raise ValueError(
+                    "Could not restore the active Assembly document."
+                )
+
+            # Create the Assembly component link.
+            link_name = "PLM_" + part_object.Name
+
+            link = assembly_doc.addObject(
+                "App::Link",
+                link_name
+            )
+
+            link.Label = part_object.Label
+            link.setLink(part_object)
+
+            # Assembly::AssemblyObject derives from App::Part,
+            # so the link can be added directly to the assembly.
+            assembly.addObject(link)
+
+            assembly_doc.recompute()
+
+            FreeCAD.Console.PrintMessage(
+                "Added PLM part to Assembly: "
+                + part_object.Label
+                + "\n"
+            )
+
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+                self.form.searchPartMessageLabel.setText(
+                    "Part added to Assembly."
+                )
+            else:
+                self.form.browseMessageLabel.setText(
+                    "Part added to Assembly."
+                )
+
+        except Exception as e:
+
+            message = "Error adding part to Assembly: " + str(e)
+
+            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+                self.form.searchPartMessageLabel.setText(message)
+            else:
+                self.form.browseMessageLabel.setText(message)
+
+            FreeCAD.Console.PrintError(message + "\n")
+
+    def is_active_assembly(self):
+        """
+        Return True only when the active document contains
+        a FreeCAD 1.1 Assembly workbench assembly.
+        """
+        return self.get_active_assembly() is not None
+        
+        
+        
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
@@ -588,7 +790,8 @@ class TaackPlmTaskPanel(object):
         self.form.uploadProgress.setValue(0)
 
         documents = self.get_upload_documents()
-
+        # Update the amount of data to upload
+        self.update_upload_size(documents)
         print("")
         print("======================================")
         print("DOCUMENTS SHOWN IN UPLOAD LIST")
@@ -609,7 +812,37 @@ class TaackPlmTaskPanel(object):
         )
 
         print("======================================")
+    def update_upload_size(self, documents=None):
+        """Update the upload size label with the total size of the selected documents."""
 
+        if documents is None:
+            documents = self.get_upload_documents()
+
+        total_bytes = 0
+
+        for doc in documents:
+            filename = getattr(doc, "FileName", "")
+
+            if not filename:
+                continue
+
+            try:
+                total_bytes += os.path.getsize(filename)
+            except OSError:
+                pass
+
+        # Convert bytes to MB
+        total_mb = total_bytes / (1024 * 1024)
+
+        if total_mb >= 1024:
+            size_text = f"{total_mb / 1024:.1f} GB"
+        else:
+            size_text = f"{total_mb:.0f} MB"
+
+        self.form.uploadSizeLabel.setText(
+            "Data to upload: " + size_text
+        )
+        
     def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
@@ -1228,6 +1461,7 @@ class TaackPlmTaskPanel(object):
             FreeCAD.Console.PrintWarning(
                 translate("TaackPlm", "Not connected to the PLM server.") + "\n"
             )
+            self.get_server_info()
             return
 
         try:
@@ -1410,18 +1644,19 @@ class TaackPlmTaskPanel(object):
             r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
+                self.get_server_info()
                 self.po.user = self.form.userEdit.text()
                 self.po.url = self.form.urlEdit.text()
                 self.po.passwd = self.form.passEdit.text()
                 self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
                 self.form.connectButton.setEnabled(False)
-                self.form.forkButton.setEnabled(True)
                 self.form.connectButton.setText('Connected')
                 self.form.disconnectButton.setEnabled(True)
                 QtCore.QTimer.singleShot(1000, lambda: self.form.tabWidget.setCurrentWidget(self.form.checkInTab))
             else:
                 print(r.json()["message"])
                 self.po.connected = False
+                self.get_server_info()
         except:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Can't connect to the intranet.") + "\n")
 
@@ -1434,6 +1669,7 @@ class TaackPlmTaskPanel(object):
 
         if not self.po.connected:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Not connected.") + "\n")
+            self.get_server_info()
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
@@ -1511,6 +1747,7 @@ class TaackPlmTaskPanel(object):
                                 return None
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
+                            self.get_server_info()
                             self.po.connected = False
                         finally:
                             file_tmp_zip_files.close()
@@ -1604,6 +1841,7 @@ class TaackPlmTaskPanel(object):
         for part in parts:
             self.create_doc_protobuf(part, bucket)
 
+        self.form.uploadSizeLabel
         return bucket
 
     def create_doc_protobuf(self, obj, bucket):
@@ -1760,7 +1998,42 @@ class TaackPlmTaskPanel(object):
             raise ValueError("createLinkProtobuf Error: " + str(e))
 
         return linked_doc.Name
+        
+    def get_server_info(self):
+        try:
+            url = self.po.url + 'plmJson/serverInfo'
 
+            response = self.po.taackIntranetSession.get(url, timeout=10)
+            response.raise_for_status()
+
+            server_info = response.json()
+
+            server_version = server_info.get("serverVersion", "Unknown")
+            protocol_version = server_info.get("messagingProtocolVersion", "Unknown")
+            maximum_upload_size = server_info.get("maximumFileUploadSize")
+
+            self.form.serverVersionValue.setText(str(server_version))
+            self.form.messagingProtocolVersionValue.setText(str(protocol_version))
+
+            if maximum_upload_size is not None:
+                # Convert bytes to MB
+                size_mb = maximum_upload_size / (1024 * 1024)
+
+                if size_mb >= 1024:
+                    size_text = f"{size_mb / 1024:.1f} GB"
+                else:
+                    size_text = f"{size_mb:.0f} MB"
+
+                self.form.maximumFileUploadSizeValue.setText(size_text)
+            else:
+                self.form.maximumFileUploadSizeValue.setText("Unknown")
+
+        except Exception as e:
+            print("Unable to get server information:", e)
+
+            self.form.serverVersionValue.setText("Unknown")
+            self.form.messagingProtocolVersionValue.setText("Unknown")
+            self.form.maximumFileUploadSizeValue.setText("Unknown")
 
 if FreeCAD.GuiUp:
     FreeCADGui.addCommand('TaackPLM_Intranet', CommandTaackPlm())
