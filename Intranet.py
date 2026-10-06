@@ -76,10 +76,10 @@ class TaackPlmTaskPanel(object):
 
         # Restore saved workspace directory
         workspace = self.po.settings.value("workspace", "")
-
         if workspace:
             self.form.workspaceEdit.setText(workspace)
-
+            self.set_freecad_working_directory(workspace)
+       
         # Save workspace whenever the user changes it
         QtCore.QObject.connect(
             self.form.workspaceEdit,
@@ -189,6 +189,17 @@ class TaackPlmTaskPanel(object):
             self.get_server_info()
         elif self.form.tabWidget.currentWidget() == self.form.browseTab:
             self.browse_by_tag()
+    def set_freecad_working_directory(self, workspace):
+        if not workspace:
+            return
+
+        param = FreeCAD.ParamGet(
+            "User parameter:BaseApp/Preferences/General"
+        )
+
+        param.SetString("WorkingDir", workspace)
+        param.SetString("FileOpenSavePath", workspace)
+ 
     def update_add_to_assembly_button(self):
         """
         Enable Add to Assembly only when the active document
@@ -377,6 +388,8 @@ class TaackPlmTaskPanel(object):
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
+        # Make FreeCAD use the PLM workspace as its default directory
+        self.set_freecad_working_directory(workspace)
     def browse_workspace(self):
         current_workspace = self.form.workspaceEdit.text().strip()
     
@@ -391,7 +404,8 @@ class TaackPlmTaskPanel(object):
             start_directory,
             QtGui.QFileDialog.ShowDirsOnly
         )
-    
+
+
         if workspace:
             workspace = os.path.abspath(workspace)
     
@@ -402,7 +416,9 @@ class TaackPlmTaskPanel(object):
                 workspace
             )
             self.po.settings.sync()
-    
+            self.form.workspaceEdit.setText(workspace)
+            self.save_workspace(workspace)
+            
             FreeCAD.Console.PrintMessage(
                 "Workspace directory: "
                 + workspace
