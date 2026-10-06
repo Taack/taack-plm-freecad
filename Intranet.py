@@ -430,73 +430,6 @@ class TaackPlmTaskPanel(object):
 
         return sha1.hexdigest()
 
-    def get_upload_parts(self):
-        """
-        Return the documents selected for upload.
-        Never return doc.Objects.
-        """
-        return self.get_upload_documents()
-
-    def _record_modified_baseline(self, assembly_doc, documents):
-        assembly_file = getattr(assembly_doc, "FileName", "")
-
-        if not assembly_file:
-            return
-
-        assembly_file = os.path.abspath(assembly_file)
-
-        baseline = self._get_modified_baseline()
-
-        assembly_baseline = baseline.setdefault(
-            assembly_file,
-            {}
-        )
-
-        for doc in documents:
-            filename = getattr(doc, "FileName", "")
-            if not filename:
-                continue
-            filename = os.path.abspath(filename)
-            mtime = self._get_file_mtime_ns(filename)
-            if mtime is not None:
-                assembly_baseline[filename] = mtime
-
-        self._save_modified_baseline(baseline)
-
-    def get_upload_documents(self):
-        doc = FreeCAD.ActiveDocument
-        if doc is None:
-            return []
-
-        # Active document only
-        if self.form.forkActive.isChecked():
-            return [doc]
-
-        # Discover linked documents.
-        all_documents = []
-        visited_docs = set()
-        visited_objects = set()
-        visited_docs.add(
-            getattr(doc, "Name", str(id(doc)))
-        )
-        for obj in getattr(doc, "Objects", []):
-            self.scan_object_for_links(obj, all_documents, visited_docs, visited_objects)
-
-        # All parts
-        if self.form.forkAll.isChecked():
-            return all_documents
-
-        # Modified parts
-        if self.form.forkTouched.isChecked():
-            modified_documents = []
-
-            for linked_doc in all_documents:
-                if self._document_was_modified(linked_doc, doc):
-                    modified_documents.append(linked_doc)
-            return modified_documents
-
-        return []
-
     def get_linked_documents_recursive(
             self,
             doc,
@@ -791,29 +724,6 @@ class TaackPlmTaskPanel(object):
         print("Closing Taack PLM panel")
         FreeCADGui.Control.closeDialog()
 
-    def fork(self):
-
-        self.docLabelsForked = []
-        self.uuidVersion = (
-            self.uuidVersion
-            if self.uuidVersion
-            else uuid.uuid4()
-        )
-
-        documents = self.get_upload_documents()
-
-        print("")
-        print("======================================")
-        print("FORK DOCUMENTS")
-        print("======================================")
-
-        for doc in documents:
-            if doc.Name in self.docLabelsForked:
-                continue
-            self.docLabelsForked.append(doc.Name)
-            print("Forking: " + doc.Name + " / " + doc.Label)
-
-        print("======================================")
 
     def add_to_workspace(self):
         try:
@@ -1611,13 +1521,6 @@ class TaackPlmTaskPanel(object):
             self.form.uploadButton.setText("Upload")
             return False
 
-        documents = self.get_upload_documents()
-
-        if not self.confirm_large_upload(documents):
-            self.form.uploadButton.setEnabled(True)
-            self.form.uploadButton.setText("Upload")
-            return False
-
         self.form.uploadProgress.setRange(0, 100)
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setFormat("Uploading...")
@@ -1739,49 +1642,11 @@ class TaackPlmTaskPanel(object):
         except Exception:
             print("Error creating FreeCAD thumbnail for file ", input_file)
 
-    def confirm_large_upload(self, documents):
-        total_bytes = 0
-
-        for doc in documents:
-            filename = getattr(doc, "FileName", "")
-            if not filename:
-                continue
-
-            try:
-                total_bytes += os.path.getsize(filename)
-            except OSError:
-                pass
-
-        total_mb = total_bytes / (1024 * 1024)
-
-        # Warn about uploads large uploads. This is set to 500mb
-        if total_mb <= 500:
-            return True
-
-        message = (
-            "This upload contains approximately "
-            f"{total_mb:.2f} MB of FreeCAD files.\n\n"
-            "This may require a significant amount of RAM to upload\n\n"
-            "Do you want to continue?"
-        )
-
-        result = QtGui.QMessageBox.warning(self.form, "Large Upload", message,
-                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-
-        return result == QtGui.QMessageBox.Yes
-
-    ### FreeCAD <-> protobuf conversion tools
 
     def create_bucket_protobuf(self):
-
-        print("createBucketProtobuf")
         self.shaOneMap = dict()
-        parts = self.get_upload_documents()
         bucket = PlmBuf.Bucket()
-
-        for part in parts:
-            self.create_doc_protobuf(part, bucket)
-
+        self.create_doc_protobuf(FreeCAD.ActiveDocument, bucket)
         return bucket
 
     def create_doc_protobuf(self, obj, bucket):
