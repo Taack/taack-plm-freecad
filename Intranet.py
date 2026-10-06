@@ -97,6 +97,7 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
+        QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
 
         QtCore.QObject.connect(
             self.form.uploadButton,
@@ -1641,6 +1642,35 @@ class TaackPlmTaskPanel(object):
 
         except Exception:
             print("Error creating FreeCAD thumbnail for file ", input_file)
+
+    def fork(self):
+        self.docLabelsForked = []
+        self.uuidVersion = self.uuidVersion if self.uuidVersion else uuid.uuid4()
+        print(str(self.form.forkActive))
+        print(str(self.form.forkAll))
+        print(str(self.form.forkTouched))
+        self.fork_children(FreeCAD.ActiveDocument)
+        # self.form.forkButton.setEnabled(False)
+
+    def fork_children(self, part):
+        print("Forking ... " + str(part))
+        if part.Label in self.docLabelsForked:
+            return None
+        if (part.isTouched() and self.form.forkTouched.isChecked()) or self.form.forkActive.isChecked() or self.form.forkAll.isChecked():
+            print("part.isTouched(): " + str(part.isTouched()))
+            if not part.Id.endswith(str(self.uuidVersion)):
+                part.Id = (part.Id if part.Id else part.Uid) + '/' + str(self.uuidVersion)
+        self.docLabelsForked.append(part.Label)
+        if self.form.forkTouched.isChecked() or self.form.forkAll.isChecked():
+            linked_objects = iter(part.Objects)
+            for l in linked_objects:
+                if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
+                    if self.form.forkAll.isChecked() or l.LinkedObject.Document.isTouched():
+                        print("l.LinkedObject.Document.isTouched(): " + str(l.LinkedObject.Document.isTouched()))
+                        if not l.LinkedObject.Document.Id.endswith(str(self.uuidVersion)):
+                            l.LinkedObject.Document.Id = (l.LinkedObject.Document.Id if l.LinkedObject.Document.Id else l.LinkedObject.Document.Uid) + '/' + str(self.uuidVersion)
+                        self.fork_children(l.LinkedObject.Document)
+        return None
 
 
     def create_bucket_protobuf(self):
