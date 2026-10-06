@@ -79,7 +79,7 @@ class TaackPlmTaskPanel(object):
         if workspace:
             self.form.workspaceEdit.setText(workspace)
             self.set_freecad_working_directory(workspace)
-       
+
         # Save workspace whenever the user changes it
         QtCore.QObject.connect(
             self.form.workspaceEdit,
@@ -92,20 +92,12 @@ class TaackPlmTaskPanel(object):
             self.form.tabWidget.setCurrentWidget(
                 self.form.loginTab
             )
-        self.refresh_part_list()
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
-        QtCore.QObject.connect(self.form.forkActive, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
-        QtCore.QObject.connect(self.form.forkAll, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
 
-        QtCore.QObject.connect(
-            self.form.forkTouched,
-            QtCore.SIGNAL("toggled(bool)"),
-            self.refresh_part_list
-        )
         QtCore.QObject.connect(
             self.form.uploadButton,
             QtCore.SIGNAL("pressed()"),
@@ -178,17 +170,19 @@ class TaackPlmTaskPanel(object):
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
         self.update_add_to_assembly_button()
-        
+
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
             self.form.connectButton.setText('Connected')
+
     def tab_changed(self, index):
         """Run actions when a tab is selected."""
         if self.form.tabWidget.currentWidget() == self.form.loginTab:
             self.get_server_info()
         elif self.form.tabWidget.currentWidget() == self.form.browseTab:
             self.browse_by_tag()
+
     def set_freecad_working_directory(self, workspace):
         if not workspace:
             return
@@ -199,7 +193,7 @@ class TaackPlmTaskPanel(object):
 
         param.SetString("WorkingDir", workspace)
         param.SetString("FileOpenSavePath", workspace)
- 
+
     def update_add_to_assembly_button(self):
         """
         Enable Add to Assembly only when the active document
@@ -231,6 +225,7 @@ class TaackPlmTaskPanel(object):
                 self.form.addSearchPartToAssemblyButton.setToolTip(
                     "Available only when a FreeCAD 1.1 Assembly is active."
                 )
+
     def get_active_assembly(self):
         """
         Return the active FreeCAD 1.1 Assembly::AssemblyObject.
@@ -250,6 +245,7 @@ class TaackPlmTaskPanel(object):
                 pass
 
         return None
+
     def add_to_assembly(self):
 
         assembly_doc = FreeCAD.ActiveDocument
@@ -382,22 +378,21 @@ class TaackPlmTaskPanel(object):
         a FreeCAD 1.1 Assembly workbench assembly.
         """
         return self.get_active_assembly() is not None
-        
-        
-        
+
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
         # Make FreeCAD use the PLM workspace as its default directory
         self.set_freecad_working_directory(workspace)
+
     def browse_workspace(self):
         current_workspace = self.form.workspaceEdit.text().strip()
-    
+
         if current_workspace and os.path.isdir(current_workspace):
             start_directory = current_workspace
         else:
             start_directory = os.path.expanduser("~")
-    
+
         workspace = QtGui.QFileDialog.getExistingDirectory(
             self.form,
             "Select Workspace Directory",
@@ -405,12 +400,11 @@ class TaackPlmTaskPanel(object):
             QtGui.QFileDialog.ShowDirsOnly
         )
 
-
         if workspace:
             workspace = os.path.abspath(workspace)
-    
+
             self.form.workspaceEdit.setText(workspace)
-    
+
             self.po.settings.setValue(
                 "workspace",
                 workspace
@@ -418,12 +412,13 @@ class TaackPlmTaskPanel(object):
             self.po.settings.sync()
             self.form.workspaceEdit.setText(workspace)
             self.save_workspace(workspace)
-            
+
             FreeCAD.Console.PrintMessage(
                 "Workspace directory: "
                 + workspace
                 + "\n"
-            )    
+            )
+
     def compute_file_shaOne(self, filePath):
         sha1 = hashlib.sha1()
         with open(filePath, 'rb') as f:
@@ -434,22 +429,6 @@ class TaackPlmTaskPanel(object):
                 sha1.update(data)
 
         return sha1.hexdigest()
-
-    def add_upload_part_to_list(self, doc):
-        if doc is None:
-            return
-
-        try:
-            label = doc.Label
-        except Exception:
-            return
-
-        for i in range(self.form.List.count()):
-            if self.form.List.item(i).text() == label:
-                return
-
-        self.form.List.addItem(label)
-
 
     def get_upload_parts(self):
         """
@@ -544,7 +523,7 @@ class TaackPlmTaskPanel(object):
             objects = list(doc.Objects)
         except Exception as e:
             print("Unable to read document objects: " + str(e)
-            )
+                  )
 
             return
 
@@ -802,65 +781,6 @@ class TaackPlmTaskPanel(object):
             visited_documents
         )
 
-    def refresh_part_list(self):
-
-        self.form.List.clear()
-        self.form.uploadProgress.setValue(0)
-
-        documents = self.get_upload_documents()
-        # Update the amount of data to upload
-        self.update_upload_size(documents)
-        print("")
-        print("======================================")
-        print("DOCUMENTS SHOWN IN UPLOAD LIST")
-        print("======================================")
-
-        for doc in documents:
-            print(
-                doc.Name +
-                " / " +
-                doc.Label
-            )
-
-            self.add_upload_part_to_list(doc)
-
-        print(
-            "TOTAL SHOWN: " +
-            str(len(documents))
-        )
-
-        print("======================================")
-    def update_upload_size(self, documents=None):
-        """Update the upload size label with the total size of the selected documents."""
-
-        if documents is None:
-            documents = self.get_upload_documents()
-
-        total_bytes = 0
-
-        for doc in documents:
-            filename = getattr(doc, "FileName", "")
-
-            if not filename:
-                continue
-
-            try:
-                total_bytes += os.path.getsize(filename)
-            except OSError:
-                pass
-
-        # Convert bytes to MB
-        total_mb = total_bytes / (1024 * 1024)
-
-        if total_mb >= 1024:
-            size_text = f"{total_mb / 1024:.1f} GB"
-        else:
-            size_text = f"{total_mb:.0f} MB"
-
-        self.form.uploadSizeLabel.setText(
-            "Data to upload: " + size_text
-        )
-        
     def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
@@ -891,7 +811,7 @@ class TaackPlmTaskPanel(object):
             if doc.Name in self.docLabelsForked:
                 continue
             self.docLabelsForked.append(doc.Name)
-            print("Forking: " +doc.Name + " / " + doc.Label)
+            print("Forking: " + doc.Name + " / " + doc.Label)
 
         print("======================================")
 
@@ -1174,6 +1094,7 @@ class TaackPlmTaskPanel(object):
             )
 
             return None
+
     def open_in_freecad(self):
 
         try:
@@ -1372,6 +1293,7 @@ class TaackPlmTaskPanel(object):
                 str(e) +
                 "\n"
             )
+
     def browse_tag_selected(self, item, column):
 
         self.form.browseMessageLabel.clear()
@@ -1423,10 +1345,10 @@ class TaackPlmTaskPanel(object):
                     continue
 
                 part_name = (
-                    part.get("name")
-                    or part.get("originalName")
-                    or part.get("label")
-                    or str(part.get("id", ""))
+                        part.get("name")
+                        or part.get("originalName")
+                        or part.get("label")
+                        or str(part.get("id", ""))
                 )
 
                 tree_item = QtGui.QTreeWidgetItem(
@@ -1645,8 +1567,6 @@ class TaackPlmTaskPanel(object):
                 ) + str(e) + "\n"
             )
 
-
-
     def logout_intranet(self):
         print('logout Intranet ...')
         self.po.taackIntranetSession.get(url=self.form.urlEdit.text() + 'logout', timeout=5)
@@ -1659,7 +1579,8 @@ class TaackPlmTaskPanel(object):
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
         self.save_preferences()
         try:
-            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,timeout=5)
+            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,
+                                                  timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
                 self.get_server_info()
@@ -1679,7 +1600,6 @@ class TaackPlmTaskPanel(object):
 
     def upload_current_active_doc(self):
 
-        self.form.List.clear()
         self.form.uploadProgress.setValue(0)
         self.form.uploadButton.setEnabled(False)
         self.form.uploadButton.setText("Uploading...")
@@ -1723,14 +1643,16 @@ class TaackPlmTaskPanel(object):
         data = {"ajax": 'true'}
         file_tmp_zip_proto = open(tmp_zip_proto, 'rb')
         try:
-            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto', files={'proto.bin': file_tmp_zip_proto}, data=data)
+            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto',
+                                                  files={'proto.bin': file_tmp_zip_proto}, data=data)
             resp_bytes = BytesIO(r.content).read()
             resp_bucket = PlmBuf.Bucket()
             resp_bucket.ParseFromString(resp_bytes)
             if resp_bucket.status == PlmBuf.ServerStatus.OK_PROTO:
                 for serverSha1File in resp_bucket.serverSha1Files:
                     if serverSha1File in self.shaOneMap:
-                        print("Removing:" + self.shaOneMap.pop(serverSha1File) + " from files to upload ... " + serverSha1File)
+                        print("Removing:" + self.shaOneMap.pop(
+                            serverSha1File) + " from files to upload ... " + serverSha1File)
                     else:
                         print("NO KEY:" + serverSha1File + " ... ")
 
@@ -1755,15 +1677,18 @@ class TaackPlmTaskPanel(object):
 
                         file_tmp_zip_files = open(tmp_zip_files, 'rb')
                         try:
-                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip', files={'proto.bin': file_tmp_zip_files}, data=data)
+                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip',
+                                                                  files={'proto.bin': file_tmp_zip_files}, data=data)
                             resp_bytes = BytesIO(r.content).read()
                             resp_bucket = PlmBuf.Bucket()
                             resp_bucket.ParseFromString(resp_bytes)
                             if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
-                                FreeCAD.Console.PrintWarning(translate("TaackPlm", "Problem uploading zip with files.") + "\n")
+                                FreeCAD.Console.PrintWarning(
+                                    translate("TaackPlm", "Problem uploading zip with files.") + "\n")
                                 return None
                         except Exception as ex:
-                            FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
+                            FreeCAD.Console.PrintWarning(
+                                translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
                             self.get_server_info()
                             self.po.connected = False
                         finally:
@@ -1840,11 +1765,10 @@ class TaackPlmTaskPanel(object):
             "Do you want to continue?"
         )
 
-        result = QtGui.QMessageBox.warning(self.form, "Large Upload", message, QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
+        result = QtGui.QMessageBox.warning(self.form, "Large Upload", message,
+                                           QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
 
         return result == QtGui.QMessageBox.Yes
-
-
 
     ### FreeCAD <-> protobuf conversion tools
 
@@ -1858,7 +1782,6 @@ class TaackPlmTaskPanel(object):
         for part in parts:
             self.create_doc_protobuf(part, bucket)
 
-        self.form.uploadSizeLabel
         return bucket
 
     def create_doc_protobuf(self, obj, bucket):
@@ -1872,7 +1795,7 @@ class TaackPlmTaskPanel(object):
                 "Upload error: object '" + getattr(obj, "Label", "<unknown>") + "' is not a FreeCAD Document. Type: " +
                 getattr(obj, "TypeId", "<unknown>"))
 
-        print("createDocProtobuf: " +obj.Name + " / " + obj.Label)
+        print("createDocProtobuf: " + obj.Name + " / " + obj.Label)
 
         try:
             if obj.Name in self.avoidLoop:
@@ -2015,7 +1938,7 @@ class TaackPlmTaskPanel(object):
             raise ValueError("createLinkProtobuf Error: " + str(e))
 
         return linked_doc.Name
-        
+
     def get_server_info(self):
         try:
             url = self.po.url + 'plmJson/serverInfo'
@@ -2051,6 +1974,7 @@ class TaackPlmTaskPanel(object):
             self.form.serverVersionValue.setText("Unknown")
             self.form.messagingProtocolVersionValue.setText("Unknown")
             self.form.maximumFileUploadSizeValue.setText("Unknown")
+
 
 if FreeCAD.GuiUp:
     FreeCADGui.addCommand('TaackPLM_Intranet', CommandTaackPlm())
