@@ -6,25 +6,59 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>413</width>
-    <height>520</height>
+    <width>424</width>
+    <height>514</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Taack PLM</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
+   <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="checkInTab">
       <attribute name="title">
        <string>Check-in</string>
       </attribute>
       <layout class="QGridLayout" name="checkInLayout">
+       <item row="3" column="0">
+        <widget class="QRadioButton" name="forkActive">
+         <property name="text">
+          <string>Duplicate Active Part</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QProgressBar" name="uploadProgress">
+         <property name="value">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QPushButton" name="forkButton">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string>Duplicate History</string>
+         </property>
+        </widget>
+       </item>
        <item row="5" column="0">
+        <widget class="QRadioButton" name="forkTouched">
+         <property name="text">
+          <string>Duplicate Modified Parts</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
         <widget class="QRadioButton" name="forkAll">
          <property name="text">
           <string>Duplicate All Parts</string>
@@ -32,6 +66,13 @@
         </widget>
        </item>
        <item row="0" column="0">
+        <widget class="QPushButton" name="uploadButton">
+         <property name="text">
+          <string>Upload</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
@@ -44,115 +85,22 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="0">
-        <widget class="QPushButton" name="uploadButton">
-         <property name="text">
-          <string>Upload</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QRadioButton" name="forkActive">
-         <property name="text">
-          <string>Duplicate Active Part</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QRadioButton" name="forkTouched">
-         <property name="text">
-          <string>Duplicate Modified Parts</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="2">
-        <widget class="QPushButton" name="forkButton">
-         <property name="text">
-          <string>Duplicate</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QProgressBar" name="uploadProgress">
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="browseTab">
+     <widget class="QWidget" name="searchPartTab">
       <attribute name="title">
-       <string>Browse by Tags</string>
+       <string>Search Part</string>
       </attribute>
-      <layout class="QGridLayout" name="browseLayout">
-       <item row="0" column="0" colspan="3">
-        <widget class="QPushButton" name="browseByTagButton">
-         <property name="text">
-          <string>Get Tag List</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="3">
-        <widget class="QTreeWidget" name="browseTree">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>150</height>
-          </size>
-         </property>
-         <column>
-          <property name="text">
-           <string>Part</string>
-          </property>
-         </column>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="addToWorkspaceButton">
+      <layout class="QGridLayout" name="searchPartLayout">
+       <item row="3" column="0">
+        <widget class="QPushButton" name="addSearchPartButton">
          <property name="text">
           <string>Add to Workspace</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QPushButton" name="openInFreeCADButton">
-         <property name="text">
-          <string>Open in FreeCAD</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QPushButton" name="addToAssemblyButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="toolTip">
-          <string>Available only when a FreeCAD Assembly is active.</string>
-         </property>
-         <property name="text">
-          <string>Add to Assembly</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="3">
-        <widget class="QLabel" name="browseMessageLabel">
+       <item row="4" column="0" colspan="3">
+        <widget class="QLabel" name="searchPartMessageLabel">
          <property name="text">
           <string/>
          </property>
@@ -161,17 +109,75 @@
          </property>
         </widget>
        </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="searchPartTab">
-      <attribute name="title">
-       <string>Search Part</string>
-      </attribute>
-      <layout class="QGridLayout" name="searchPartLayout">
-       <item row="0" column="0" colspan="2">
-        <widget class="QLineEdit" name="partSearchEdit">
+       <item row="1" column="1">
+        <widget class="QCheckBox" name="topAssemblies">
+         <property name="text">
+          <string>Top Assemblies</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="tagName">
+         <property name="text">
+          <string/>
+         </property>
          <property name="placeholderText">
-          <string>Search for a part...</string>
+          <string>Tag name</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLineEdit" name="partSearchEdit">
+         <property name="inputMask">
+          <string/>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="placeholderText">
+          <string>Part label ...</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QComboBox" name="modelStatus">
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="placeholderText">
+          <string>Part Status</string>
+         </property>
+         <item>
+          <property name="text">
+           <string/>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>CREATED</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>FREE</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>LOCKED</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>OBSOLETE</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="myModel">
+         <property name="text">
+          <string>My Models</string>
          </property>
         </widget>
        </item>
@@ -182,50 +188,13 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0" colspan="3">
-        <widget class="QListWidget" name="partSearchList">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>150</height>
-          </size>
-         </property>
-        </widget>
+       <item row="2" column="0" colspan="3">
+        <widget class="QTableWidget" name="modelTable"/>
        </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="addSearchPartButton">
-         <property name="text">
-          <string>Add to Workspace</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
+       <item row="3" column="2">
         <widget class="QPushButton" name="openSearchPartButton">
          <property name="text">
           <string>Open in FreeCAD</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QPushButton" name="addSearchPartToAssemblyButton">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="toolTip">
-          <string>Available only when a FreeCAD 1.1 Assembly is active.</string>
-         </property>
-         <property name="text">
-          <string>Add to Assembly</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="3">
-        <widget class="QLabel" name="searchPartMessageLabel">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -236,26 +205,6 @@
        <string>Login</string>
       </attribute>
       <layout class="QGridLayout" name="loginLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="urlLabel">
-         <property name="text">
-          <string>URL</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="urlEdit"/>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>User</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="userEdit"/>
-       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_3">
          <property name="text">
@@ -263,124 +212,17 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="passEdit">
-         <property name="echoMode">
-          <enum>QLineEdit::EchoMode::Password</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="workspaceLabel">
+       <item row="0" column="0">
+        <widget class="QLabel" name="urlLabel">
          <property name="text">
-          <string>Workspace Directory</string>
+          <string>URL</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <layout class="QHBoxLayout" name="workspaceLayout">
-         <item>
-          <widget class="QPushButton" name="workspaceBrowseButton">
-           <property name="toolTip">
-            <string>Select workspace directory</string>
-           </property>
-           <property name="text">
-            <string>🔍</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QLineEdit" name="workspaceEdit">
-         <property name="placeholderText">
-          <string>Select workspace directory...</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QPushButton" name="connectButton">
-         <property name="text">
-          <string>Connect</string>
-         </property>
-        </widget>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="userEdit"/>
        </item>
        <item row="6" column="0" colspan="2">
-        <widget class="QPushButton" name="disconnectButton">
-         <property name="text">
-          <string>Disconnect</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" colspan="2">
-        <spacer name="serverInfoSpacer">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Policy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="8" column="0" colspan="2">
-        <widget class="QLabel" name="serverInfoTitleLabel">
-         <property name="text">
-          <string>Server Information</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="serverVersionLabel">
-         <property name="text">
-          <string>Server Build:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QLabel" name="serverVersionValue">
-         <property name="text">
-          <string>Unknown</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0">
-        <widget class="QLabel" name="messagingProtocolVersionLabel">
-         <property name="text">
-          <string>Messaging Protocol:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QLabel" name="messagingProtocolVersionValue">
-         <property name="text">
-          <string>Unknown</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="maximumFileUploadSizeLabel">
-         <property name="text">
-          <string>Maximum Upload Size:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QLabel" name="maximumFileUploadSizeValue">
-         <property name="text">
-          <string>Unknown</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="0" colspan="2">
         <spacer name="loginSpacer">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
@@ -392,6 +234,47 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="workspaceLabel">
+         <property name="text">
+          <string>Workspace Directory</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="passEdit">
+         <property name="echoMode">
+          <enum>QLineEdit::EchoMode::Password</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>User</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="workspaceEdit"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="urlEdit"/>
+       </item>
+       <item row="4" column="0" colspan="2">
+        <widget class="QPushButton" name="connectButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QPushButton" name="disconnectButton">
+         <property name="text">
+          <string>Disconnect</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

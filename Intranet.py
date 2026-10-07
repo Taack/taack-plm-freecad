@@ -104,16 +104,16 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.upload_current_active_doc
         )
-        QtCore.QObject.connect(
-            self.form.browseByTagButton,
-            QtCore.SIGNAL("pressed()"),
-            self.browse_by_tag
-        )
-        QtCore.QObject.connect(
-            self.form.browseTree,
-            QtCore.SIGNAL("itemClicked(QTreeWidgetItem*, int)"),
-            self.browse_tag_selected
-        )
+        # QtCore.QObject.connect(
+        #     self.form.browseByTagButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.browse_by_tag
+        # )
+        # QtCore.QObject.connect(
+        #     self.form.browseTree,
+        #     QtCore.SIGNAL("itemClicked(QTreeWidgetItem*, int)"),
+        #     self.browse_tag_selected
+        # )
         QtCore.QObject.connect(
             self.form.addToWorkspaceButton,
             QtCore.SIGNAL("pressed()"),
@@ -147,30 +147,29 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("returnPressed()"),
             self.search_parts
         )
-        QtCore.QObject.connect(
-            self.form.workspaceBrowseButton,
-            QtCore.SIGNAL("pressed()"),
-            self.browse_workspace
-        )
+        # QtCore.QObject.connect(
+        #     self.form.workspaceBrowseButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.browse_workspace
+        # )
         QtCore.QObject.connect(
             self.form.tabWidget,
             QtCore.SIGNAL("currentChanged(int)"),
             self.tab_changed
         )
-        QtCore.QObject.connect(
-            self.form.addToAssemblyButton,
-            QtCore.SIGNAL("pressed()"),
-            self.add_to_assembly
-        )
-        QtCore.QObject.connect(
-            self.form.addSearchPartToAssemblyButton,
-            QtCore.SIGNAL("pressed()"),
-            self.add_to_assembly
-        )
+        # QtCore.QObject.connect(
+        #     self.form.addToAssemblyButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.add_to_assembly
+        # )
+        # QtCore.QObject.connect(
+        #     self.form.addSearchPartToAssemblyButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.add_to_assembly
+        # )
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
-        self.update_add_to_assembly_button()
 
         if self.po.connected:
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
@@ -181,9 +180,6 @@ class TaackPlmTaskPanel(object):
         """Run actions when a tab is selected."""
         if self.form.tabWidget.currentWidget() == self.form.loginTab:
             self.get_server_info()
-        elif self.form.tabWidget.currentWidget() == self.form.browseTab:
-            self.browse_by_tag()
-
     def set_freecad_working_directory(self, workspace):
         if not workspace:
             return
@@ -195,37 +191,37 @@ class TaackPlmTaskPanel(object):
         param.SetString("WorkingDir", workspace)
         param.SetString("FileOpenSavePath", workspace)
 
-    def update_add_to_assembly_button(self):
-        """
-        Enable Add to Assembly only when the active document
-        contains a FreeCAD 1.1 Assembly.
-        """
-
-        enabled = self.is_active_assembly()
-
-        if hasattr(self.form, "addToAssemblyButton"):
-            self.form.addToAssemblyButton.setEnabled(enabled)
-
-            if enabled:
-                self.form.addToAssemblyButton.setToolTip(
-                    "Add the selected PLM part to the active Assembly."
-                )
-            else:
-                self.form.addToAssemblyButton.setToolTip(
-                    "Available only when a FreeCAD 1.1 Assembly is active."
-                )
-
-        if hasattr(self.form, "addSearchPartToAssemblyButton"):
-            self.form.addSearchPartToAssemblyButton.setEnabled(enabled)
-
-            if enabled:
-                self.form.addSearchPartToAssemblyButton.setToolTip(
-                    "Add the selected PLM part to the active Assembly."
-                )
-            else:
-                self.form.addSearchPartToAssemblyButton.setToolTip(
-                    "Available only when a FreeCAD 1.1 Assembly is active."
-                )
+    # def update_add_to_assembly_button(self):
+    #     """
+    #     Enable Add to Assembly only when the active document
+    #     contains a FreeCAD 1.1 Assembly.
+    #     """
+    #
+    #     enabled = self.is_active_assembly()
+    #
+    #     # if hasattr(self.form, "addToAssemblyButton"):
+    #     #     self.form.addToAssemblyButton.setEnabled(enabled)
+    #     #
+    #     #     if enabled:
+    #     #         self.form.addToAssemblyButton.setToolTip(
+    #     #             "Add the selected PLM part to the active Assembly."
+    #     #         )
+    #     #     else:
+    #     #         self.form.addToAssemblyButton.setToolTip(
+    #     #             "Available only when a FreeCAD 1.1 Assembly is active."
+    #     #         )
+    #
+    #     # if hasattr(self.form, "addSearchPartToAssemblyButton"):
+    #     #     self.form.addSearchPartToAssemblyButton.setEnabled(enabled)
+    #     #
+    #     #     if enabled:
+    #     #         self.form.addSearchPartToAssemblyButton.setToolTip(
+    #     #             "Add the selected PLM part to the active Assembly."
+    #     #         )
+    #     #     else:
+    #     #         self.form.addSearchPartToAssemblyButton.setToolTip(
+    #     #             "Available only when a FreeCAD 1.1 Assembly is active."
+    #     #         )
 
     def get_active_assembly(self):
         """
@@ -386,39 +382,39 @@ class TaackPlmTaskPanel(object):
         # Make FreeCAD use the PLM workspace as its default directory
         self.set_freecad_working_directory(workspace)
 
-    def browse_workspace(self):
-        current_workspace = self.form.workspaceEdit.text().strip()
-
-        if current_workspace and os.path.isdir(current_workspace):
-            start_directory = current_workspace
-        else:
-            start_directory = os.path.expanduser("~")
-
-        workspace = QtGui.QFileDialog.getExistingDirectory(
-            self.form,
-            "Select Workspace Directory",
-            start_directory,
-            QtGui.QFileDialog.ShowDirsOnly
-        )
-
-        if workspace:
-            workspace = os.path.abspath(workspace)
-
-            self.form.workspaceEdit.setText(workspace)
-
-            self.po.settings.setValue(
-                "workspace",
-                workspace
-            )
-            self.po.settings.sync()
-            self.form.workspaceEdit.setText(workspace)
-            self.save_workspace(workspace)
-
-            FreeCAD.Console.PrintMessage(
-                "Workspace directory: "
-                + workspace
-                + "\n"
-            )
+    # def browse_workspace(self):
+    #     current_workspace = self.form.workspaceEdit.text().strip()
+    #
+    #     if current_workspace and os.path.isdir(current_workspace):
+    #         start_directory = current_workspace
+    #     else:
+    #         start_directory = os.path.expanduser("~")
+    #
+    #     workspace = QtGui.QFileDialog.getExistingDirectory(
+    #         self.form,
+    #         "Select Workspace Directory",
+    #         start_directory,
+    #         QtGui.QFileDialog.ShowDirsOnly
+    #     )
+    #
+    #     if workspace:
+    #         workspace = os.path.abspath(workspace)
+    #
+    #         self.form.workspaceEdit.setText(workspace)
+    #
+    #         self.po.settings.setValue(
+    #             "workspace",
+    #             workspace
+    #         )
+    #         self.po.settings.sync()
+    #         self.form.workspaceEdit.setText(workspace)
+    #         self.save_workspace(workspace)
+    #
+    #         FreeCAD.Console.PrintMessage(
+    #             "Workspace directory: "
+    #             + workspace
+    #             + "\n"
+    #         )
 
     def compute_file_shaOne(self, filePath):
         sha1 = hashlib.sha1()
@@ -1205,278 +1201,278 @@ class TaackPlmTaskPanel(object):
                 "\n"
             )
 
-    def browse_tag_selected(self, item, column):
-
-        self.form.browseMessageLabel.clear()
-        # If the tree is currently showing parts, do not treat
-        # the selected part as a tag.
-
-        if self.browseShowingParts:
-            return
-
-        try:
-            tag_id = item.data(0, QtCore.Qt.UserRole)
-
-            if tag_id is None:
-                return
-
-            if not self.po.connected:
-                QtGui.QMessageBox.warning(
-                    self.form,
-                    "Not Connected",
-                    "Not connected to the server."
-                )
-                return
-
-            base_url = self.po.url.rstrip("/") + "/"
-            url = base_url + "plmJson/partsByTag"
-
-            response = self.po.taackIntranetSession.get(
-                url,
-                params={"tagId": tag_id},
-                timeout=10
-            )
-
-            response.raise_for_status()
-
-            parts = response.json()
-
-            if not isinstance(parts, list):
-                raise ValueError("Server returned an invalid parts list.")
-
-            # We are now displaying parts instead of tags.
-            self.browseShowingParts = True
-
-            # Clear the tag list
-            self.form.browseTree.clear()
-
-            # Add parts
-            for part in parts:
-                if not isinstance(part, dict):
-                    continue
-
-                part_name = (
-                        part.get("name")
-                        or part.get("originalName")
-                        or part.get("label")
-                        or str(part.get("id", ""))
-                )
-
-                tree_item = QtGui.QTreeWidgetItem(
-                    [str(part_name)]
-                )
-
-                if part.get("id") is not None:
-                    tree_item.setData(
-                        0,
-                        QtCore.Qt.UserRole,
-                        part.get("id")
-                    )
-
-                self.form.browseTree.addTopLevelItem(tree_item)
-
-        except requests.RequestException as e:
-            QtGui.QMessageBox.warning(
-                self.form,
-                "Browse Error",
-                "Could not retrieve parts from the server:\n" + str(e)
-            )
-
-        except ValueError as e:
-            QtGui.QMessageBox.warning(
-                self.form,
-                "Browse Error",
-                str(e)
-            )
-
-        except Exception as e:
-            QtGui.QMessageBox.warning(
-                self.form,
-                "Browse Error",
-                "An error occurred while retrieving parts:\n" + str(e)
-            )
-
-    def browse_by_tag(self):
-        """
-        Load all PLM tags from /plmJson/tags and display them
-        in the Browse tree using the parent/name hierarchy.
-        """
-
-        # Clear the existing tree
-
-        self.browseShowingParts = False
-
-        self.form.browseTree.clear()
-        self.form.browseMessageLabel.clear()
-        if not self.po.connected:
-            FreeCAD.Console.PrintWarning(
-                translate("TaackPlm", "Not connected to the PLM server.") + "\n"
-            )
-            self.get_server_info()
-            return
-
-        try:
-            # Make sure the URL ends with /
-            base_url = self.form.urlEdit.text().strip()
-
-            if not base_url.endswith("/"):
-                base_url += "/"
-
-            url = base_url + "plmJson/tags"
-
-            print("Loading PLM tags from: " + url)
-
-            response = self.po.taackIntranetSession.get(
-                url=url,
-                timeout=10
-            )
-
-            response.raise_for_status()
-
-            tags = response.json()
-
-            print("Received PLM tags:")
-            print(tags)
-
-            if not isinstance(tags, list):
-                FreeCAD.Console.PrintWarning(
-                    translate(
-                        "TaackPlm",
-                        "Invalid tag response from server."
-                    ) + "\n"
-                )
-                return
-
-            # ---------------------------------------------------------
-            # First pass:
-            # Create a tree item for every tag.
-            #
-            # We use the tag NAME as the key because the JSON parent
-            # field contains the parent's name.
-            # ---------------------------------------------------------
-
-            tag_items = {}
-
-            for tag in tags:
-
-                if not isinstance(tag, dict):
-                    continue
-
-                tag_id = tag.get("id")
-                tag_name = tag.get("name")
-
-                if tag_name is None:
-                    continue
-
-                tag_name = str(tag_name)
-
-                item = QtGui.QTreeWidgetItem()
-                item.setText(0, tag_name)
-
-                # Store the PLM tag ID in the tree item.
-                item.setData(
-                    0,
-                    QtCore.Qt.UserRole,
-                    tag_id
-                )
-
-                tag_items[tag_name] = item
-
-            # ---------------------------------------------------------
-            # Second pass:
-            # Connect each tag to its parent.
-            #
-            # Example:
-            #
-            # {
-            #     "name": "BC250_case_3",
-            #     "parent": "Project"
-            # }
-            #
-            # becomes:
-            #
-            # Project
-            #   └── BC250_case_3
-            # ---------------------------------------------------------
-
-            for tag in tags:
-
-                if not isinstance(tag, dict):
-                    continue
-
-                tag_name = tag.get("name")
-
-                if tag_name is None:
-                    continue
-
-                tag_name = str(tag_name)
-
-                item = tag_items.get(tag_name)
-
-                if item is None:
-                    continue
-
-                parent_name = tag.get("parent")
-
-                # No parent means this is a top-level tag.
-                if parent_name is None or str(parent_name).strip() == "":
-                    self.form.browseTree.addTopLevelItem(item)
-                    continue
-
-                parent_name = str(parent_name)
-
-                # Find the parent by name.
-                parent_item = tag_items.get(parent_name)
-
-                if parent_item is not None:
-                    parent_item.addChild(item)
-                else:
-                    # Parent does not exist in the response.
-                    # Keep the tag visible as a top-level item.
-                    print(
-                        "Parent tag not found: " +
-                        parent_name +
-                        " for tag: " +
-                        tag_name
-                    )
-
-                    self.form.browseTree.addTopLevelItem(item)
-
-            # Expand the complete tree.
-            self.form.browseTree.expandAll()
-
-            print(
-                "Loaded " +
-                str(len(tag_items)) +
-                " PLM tags."
-            )
-
-        except requests.exceptions.RequestException as e:
-
-            FreeCAD.Console.PrintWarning(
-                translate(
-                    "TaackPlm",
-                    "Unable to load PLM tags: "
-                ) + str(e) + "\n"
-            )
-
-        except ValueError as e:
-
-            FreeCAD.Console.PrintWarning(
-                translate(
-                    "TaackPlm",
-                    "Invalid JSON returned by PLM tag endpoint: "
-                ) + str(e) + "\n"
-            )
-
-        except Exception as e:
-
-            FreeCAD.Console.PrintWarning(
-                translate(
-                    "TaackPlm",
-                    "Error loading PLM tags: "
-                ) + str(e) + "\n"
-            )
+    # def browse_tag_selected(self, item, column):
+    #
+    #     self.form.browseMessageLabel.clear()
+    #     # If the tree is currently showing parts, do not treat
+    #     # the selected part as a tag.
+    #
+    #     if self.browseShowingParts:
+    #         return
+    #
+    #     try:
+    #         tag_id = item.data(0, QtCore.Qt.UserRole)
+    #
+    #         if tag_id is None:
+    #             return
+    #
+    #         if not self.po.connected:
+    #             QtGui.QMessageBox.warning(
+    #                 self.form,
+    #                 "Not Connected",
+    #                 "Not connected to the server."
+    #             )
+    #             return
+    #
+    #         base_url = self.po.url.rstrip("/") + "/"
+    #         url = base_url + "plmJson/partsByTag"
+    #
+    #         response = self.po.taackIntranetSession.get(
+    #             url,
+    #             params={"tagId": tag_id},
+    #             timeout=10
+    #         )
+    #
+    #         response.raise_for_status()
+    #
+    #         parts = response.json()
+    #
+    #         if not isinstance(parts, list):
+    #             raise ValueError("Server returned an invalid parts list.")
+    #
+    #         # We are now displaying parts instead of tags.
+    #         self.browseShowingParts = True
+    #
+    #         # Clear the tag list
+    #         self.form.browseTree.clear()
+    #
+    #         # Add parts
+    #         for part in parts:
+    #             if not isinstance(part, dict):
+    #                 continue
+    #
+    #             part_name = (
+    #                     part.get("name")
+    #                     or part.get("originalName")
+    #                     or part.get("label")
+    #                     or str(part.get("id", ""))
+    #             )
+    #
+    #             tree_item = QtGui.QTreeWidgetItem(
+    #                 [str(part_name)]
+    #             )
+    #
+    #             if part.get("id") is not None:
+    #                 tree_item.setData(
+    #                     0,
+    #                     QtCore.Qt.UserRole,
+    #                     part.get("id")
+    #                 )
+    #
+    #             self.form.browseTree.addTopLevelItem(tree_item)
+    #
+    #     except requests.RequestException as e:
+    #         QtGui.QMessageBox.warning(
+    #             self.form,
+    #             "Browse Error",
+    #             "Could not retrieve parts from the server:\n" + str(e)
+    #         )
+    #
+    #     except ValueError as e:
+    #         QtGui.QMessageBox.warning(
+    #             self.form,
+    #             "Browse Error",
+    #             str(e)
+    #         )
+    #
+    #     except Exception as e:
+    #         QtGui.QMessageBox.warning(
+    #             self.form,
+    #             "Browse Error",
+    #             "An error occurred while retrieving parts:\n" + str(e)
+    #         )
+
+    # def browse_by_tag(self):
+    #     """
+    #     Load all PLM tags from /plmJson/tags and display them
+    #     in the Browse tree using the parent/name hierarchy.
+    #     """
+    #
+    #     # Clear the existing tree
+    #
+    #     self.browseShowingParts = False
+    #
+    #     self.form.browseTree.clear()
+    #     self.form.browseMessageLabel.clear()
+    #     if not self.po.connected:
+    #         FreeCAD.Console.PrintWarning(
+    #             translate("TaackPlm", "Not connected to the PLM server.") + "\n"
+    #         )
+    #         self.get_server_info()
+    #         return
+    #
+    #     try:
+    #         # Make sure the URL ends with /
+    #         base_url = self.form.urlEdit.text().strip()
+    #
+    #         if not base_url.endswith("/"):
+    #             base_url += "/"
+    #
+    #         url = base_url + "plmJson/tags"
+    #
+    #         print("Loading PLM tags from: " + url)
+    #
+    #         response = self.po.taackIntranetSession.get(
+    #             url=url,
+    #             timeout=10
+    #         )
+    #
+    #         response.raise_for_status()
+    #
+    #         tags = response.json()
+    #
+    #         print("Received PLM tags:")
+    #         print(tags)
+    #
+    #         if not isinstance(tags, list):
+    #             FreeCAD.Console.PrintWarning(
+    #                 translate(
+    #                     "TaackPlm",
+    #                     "Invalid tag response from server."
+    #                 ) + "\n"
+    #             )
+    #             return
+    #
+    #         # ---------------------------------------------------------
+    #         # First pass:
+    #         # Create a tree item for every tag.
+    #         #
+    #         # We use the tag NAME as the key because the JSON parent
+    #         # field contains the parent's name.
+    #         # ---------------------------------------------------------
+    #
+    #         tag_items = {}
+    #
+    #         for tag in tags:
+    #
+    #             if not isinstance(tag, dict):
+    #                 continue
+    #
+    #             tag_id = tag.get("id")
+    #             tag_name = tag.get("name")
+    #
+    #             if tag_name is None:
+    #                 continue
+    #
+    #             tag_name = str(tag_name)
+    #
+    #             item = QtGui.QTreeWidgetItem()
+    #             item.setText(0, tag_name)
+    #
+    #             # Store the PLM tag ID in the tree item.
+    #             item.setData(
+    #                 0,
+    #                 QtCore.Qt.UserRole,
+    #                 tag_id
+    #             )
+    #
+    #             tag_items[tag_name] = item
+    #
+    #         # ---------------------------------------------------------
+    #         # Second pass:
+    #         # Connect each tag to its parent.
+    #         #
+    #         # Example:
+    #         #
+    #         # {
+    #         #     "name": "BC250_case_3",
+    #         #     "parent": "Project"
+    #         # }
+    #         #
+    #         # becomes:
+    #         #
+    #         # Project
+    #         #   └── BC250_case_3
+    #         # ---------------------------------------------------------
+    #
+    #         for tag in tags:
+    #
+    #             if not isinstance(tag, dict):
+    #                 continue
+    #
+    #             tag_name = tag.get("name")
+    #
+    #             if tag_name is None:
+    #                 continue
+    #
+    #             tag_name = str(tag_name)
+    #
+    #             item = tag_items.get(tag_name)
+    #
+    #             if item is None:
+    #                 continue
+    #
+    #             parent_name = tag.get("parent")
+    #
+    #             # No parent means this is a top-level tag.
+    #             if parent_name is None or str(parent_name).strip() == "":
+    #                 self.form.browseTree.addTopLevelItem(item)
+    #                 continue
+    #
+    #             parent_name = str(parent_name)
+    #
+    #             # Find the parent by name.
+    #             parent_item = tag_items.get(parent_name)
+    #
+    #             if parent_item is not None:
+    #                 parent_item.addChild(item)
+    #             else:
+    #                 # Parent does not exist in the response.
+    #                 # Keep the tag visible as a top-level item.
+    #                 print(
+    #                     "Parent tag not found: " +
+    #                     parent_name +
+    #                     " for tag: " +
+    #                     tag_name
+    #                 )
+    #
+    #                 self.form.browseTree.addTopLevelItem(item)
+    #
+    #         # Expand the complete tree.
+    #         self.form.browseTree.expandAll()
+    #
+    #         print(
+    #             "Loaded " +
+    #             str(len(tag_items)) +
+    #             " PLM tags."
+    #         )
+    #
+    #     except requests.exceptions.RequestException as e:
+    #
+    #         FreeCAD.Console.PrintWarning(
+    #             translate(
+    #                 "TaackPlm",
+    #                 "Unable to load PLM tags: "
+    #             ) + str(e) + "\n"
+    #         )
+    #
+    #     except ValueError as e:
+    #
+    #         FreeCAD.Console.PrintWarning(
+    #             translate(
+    #                 "TaackPlm",
+    #                 "Invalid JSON returned by PLM tag endpoint: "
+    #             ) + str(e) + "\n"
+    #         )
+    #
+    #     except Exception as e:
+    #
+    #         FreeCAD.Console.PrintWarning(
+    #             translate(
+    #                 "TaackPlm",
+    #                 "Error loading PLM tags: "
+    #             ) + str(e) + "\n"
+    #         )
 
     def logout_intranet(self):
         print('logout Intranet ...')
