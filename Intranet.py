@@ -82,11 +82,7 @@ class TaackPlmTaskPanel(object):
             self.set_freecad_working_directory(workspace)
 
         # Save workspace whenever the user changes it
-        QtCore.QObject.connect(
-            self.form.workspaceEdit,
-            QtCore.SIGNAL("textChanged(QString)"),
-            self.save_workspace
-        )
+        QtCore.QObject.connect(self.form.workspaceEdit, QtCore.SIGNAL("textChanged(QString)"), self.save_workspace)
 
         # Select the Login tab when we are not connected.
         if not self.po.connected:
@@ -102,7 +98,7 @@ class TaackPlmTaskPanel(object):
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
-        QtCore.QObject.connect( self.form.uploadButton, QtCore.SIGNAL("pressed()"), self.upload_current_active_doc)
+        QtCore.QObject.connect(self.form.uploadButton, QtCore.SIGNAL("pressed()"), self.upload_current_active_doc)
         QtCore.QObject.connect(self.form.searchPartButton, QtCore.SIGNAL("pressed()"), self.search_parts)
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
@@ -141,159 +137,6 @@ class TaackPlmTaskPanel(object):
 
         return sha1.hexdigest()
 
-    def _is_link_object(self, obj):
-        if obj is None:
-            return False
-
-        try:
-            if obj.isDerivedFrom("App::Link"):
-                return True
-        except Exception:
-            pass
-
-        try:
-            if obj.isDerivedFrom("Assembly::AssemblyLink"):
-                return True
-        except Exception:
-            pass
-
-        return False
-
-    def _get_linked_document(self, obj):
-        if obj is None:
-            return None
-
-        try:
-            linked = getattr(obj, "LinkedObject", None)
-
-            if linked is not None:
-                return linked.Document
-        except Exception:
-            pass
-
-        try:
-            linked = obj.getLinkedObject()
-
-            if linked is not None:
-                return linked.Document
-        except Exception:
-            pass
-
-        return None
-
-    def scan_object_for_links(
-            self,
-            obj,
-            documents,
-            visited_docs=None,
-            visited_objects=None
-    ):
-        if obj is None:
-            return
-
-        if visited_docs is None:
-            visited_docs = set()
-
-        if visited_objects is None:
-            visited_objects = set()
-
-        try:
-            obj_key = (
-                getattr(obj.Document, "Name", ""),
-                getattr(obj, "Name", "")
-            )
-        except Exception:
-            obj_key = id(obj)
-
-        if obj_key in visited_objects:
-            return
-
-        visited_objects.add(obj_key)
-
-        # ------------------------------------------------------------
-        # Linked document
-        # ------------------------------------------------------------
-
-        if self._is_link_object(obj):
-
-            linked_doc = self._get_linked_document(obj)
-
-            if linked_doc is not None:
-
-                doc_key = getattr(linked_doc, "Name", str(id(linked_doc)))
-
-                if doc_key not in visited_docs:
-                    visited_docs.add(doc_key)
-                    documents.append(linked_doc)
-
-                    # Scan the linked document for subassemblies/parts.
-                    self.scan_document_for_links(
-                        linked_doc,
-                        documents,
-                        visited_docs,
-                        visited_objects
-                    )
-
-            return
-
-        # ------------------------------------------------------------
-        # Groups / assembly hierarchy
-        # ------------------------------------------------------------
-
-        children = []
-
-        try:
-            children.extend(getattr(obj, "Group", []) or [])
-        except Exception:
-            pass
-
-        try:
-            claimed = obj.claimChildren()
-
-            if claimed:
-                children.extend(claimed)
-        except Exception:
-            pass
-
-        for child in children:
-            self.scan_object_for_links(
-                child,
-                documents,
-                visited_docs,
-                visited_objects
-            )
-
-    def scan_document_for_links(
-            self,
-            doc,
-            documents,
-            visited_docs=None,
-            visited_objects=None
-    ):
-        if doc is None:
-            return
-
-        if visited_docs is None:
-            visited_docs = set()
-
-        if visited_objects is None:
-            visited_objects = set()
-
-        doc_key = getattr(doc, "Name", str(id(doc)))
-
-        if doc_key in visited_docs:
-            return
-
-        visited_docs.add(doc_key)
-
-        for obj in getattr(doc, "Objects", []):
-            self.scan_object_for_links(
-                obj,
-                documents,
-                visited_docs,
-                visited_objects
-            )
-
     def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
@@ -304,8 +147,8 @@ class TaackPlmTaskPanel(object):
         print("Closing Taack PLM panel")
         FreeCADGui.Control.closeDialog()
 
-
     def add_to_workspace(self):
+        global message_label
         try:
             item = self.form.modelTable.currentItem()
 
@@ -411,12 +254,7 @@ class TaackPlmTaskPanel(object):
 
             with zipfile.ZipFile(zip_path, "r") as zip_file:
                 zip_file.extractall(workspace)
-                freecad_file = os.path.abspath(
-                    os.path.join(
-                        workspace,
-                        expected_name
-                    )
-                )
+                freecad_file = os.path.abspath(os.path.join(workspace, expected_name))
 
             # ---------------------------------------------------------
             # Remove the downloaded ZIP
@@ -457,31 +295,24 @@ class TaackPlmTaskPanel(object):
         except requests.exceptions.RequestException as e:
 
             message = "Download failed: " + str(e)
-
             try:
                 message_label.setText(message)
             except Exception:
                 pass
 
-            FreeCAD.Console.PrintError(
-                message + "\n"
-            )
+            FreeCAD.Console.PrintError(message + "\n")
 
             return None
 
         except Exception as e:
 
             message = "Error adding part to workspace: " + str(e)
-
             try:
                 message_label.setText(message)
             except Exception:
                 pass
 
-            FreeCAD.Console.PrintError(
-                message + "\n"
-            )
-
+            FreeCAD.Console.PrintError(message + "\n")
             return None
 
     def open_in_freecad(self):
@@ -571,7 +402,7 @@ class TaackPlmTaskPanel(object):
                     "status": model_status,
                     "isMyModel": is_my_model,
                     "isTopAssembly": is_top_assemblies,
-                        },
+                },
                 timeout=30
             )
 
@@ -585,7 +416,7 @@ class TaackPlmTaskPanel(object):
                 )
 
             row_index = 0
-            self.form.modelTable.setHorizontalHeaderLabels(["Name" , "Creator", "status", "Version", "Date"])
+            self.form.modelTable.setHorizontalHeaderLabels(["Name", "Creator", "status", "Version", "Date"])
             self.form.modelTable.setRowCount(len(parts))
 
             for part in parts:
@@ -604,7 +435,7 @@ class TaackPlmTaskPanel(object):
                 )
 
                 item = QtGui.QTableWidgetItem(str(part_name))
-                item.setData(QtCore.Qt.UserRole,part)
+                item.setData(QtCore.Qt.UserRole, part)
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
                 item2 = QtGui.QTableWidgetItem(str(part.get("userCreated")))
                 item2.setFlags(QtCore.Qt.ItemIsEnabled)
@@ -614,7 +445,6 @@ class TaackPlmTaskPanel(object):
                 item4.setFlags(QtCore.Qt.ItemIsEnabled)
                 item5 = QtGui.QTableWidgetItem(str(part.get("plmFileLastUpdated")))
                 item5.setFlags(QtCore.Qt.ItemIsEnabled)
-                # self.form.modelTable.setItem(row_index, 0, QtGui.QTableWidgetItem(str(part_id)))
                 self.form.modelTable.setItem(row_index, 0, item)
                 self.form.modelTable.setItem(row_index, 1, item2)
                 self.form.modelTable.setItem(row_index, 2, item3)
@@ -650,7 +480,6 @@ class TaackPlmTaskPanel(object):
                                                   timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
-                # self.get_server_info()
                 self.po.user = self.form.userEdit.text()
                 self.po.url = self.form.urlEdit.text()
                 self.po.passwd = self.form.passEdit.text()
@@ -661,7 +490,6 @@ class TaackPlmTaskPanel(object):
             else:
                 print(r.json()["message"])
                 self.po.connected = False
-                #self.get_server_info()
         except:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Can't connect to the intranet.") + "\n")
 
@@ -748,7 +576,6 @@ class TaackPlmTaskPanel(object):
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(
                                 translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
-                            #self.get_server_info()
                             self.po.connected = False
                         finally:
                             file_tmp_zip_files.close()
