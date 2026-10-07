@@ -8,6 +8,7 @@ import zipfile
 import math
 import uuid
 import time
+import time
 import tempfile
 import hashlib
 from PySide import QtCore, QtGui
@@ -95,6 +96,8 @@ class TaackPlmTaskPanel(object):
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
+        self.form.modelTable.setColumnCount(3)
+        self.form.modelTable.setHorizontalHeaderLabels(['Name' , 'status', 'creator'])
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
@@ -114,23 +117,23 @@ class TaackPlmTaskPanel(object):
         #     QtCore.SIGNAL("itemClicked(QTreeWidgetItem*, int)"),
         #     self.browse_tag_selected
         # )
-        QtCore.QObject.connect(
-            self.form.addToWorkspaceButton,
-            QtCore.SIGNAL("pressed()"),
-            self.add_to_workspace
-        )
+        # QtCore.QObject.connect(
+        #     self.form.addToWorkspaceButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.add_to_workspace
+        # )
 
-        QtCore.QObject.connect(
-            self.form.openInFreeCADButton,
-            QtCore.SIGNAL("pressed()"),
-            self.open_in_freecad
-        )
+        # QtCore.QObject.connect(
+        #     self.form.openInFreeCADButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.open_in_freecad
+        # )
 
-        QtCore.QObject.connect(
-            self.form.addSearchPartButton,
-            QtCore.SIGNAL("pressed()"),
-            self.add_to_workspace
-        )
+        # QtCore.QObject.connect(
+        #     self.form.addSearchPartButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.add_to_workspace
+        # )
 
         QtCore.QObject.connect(
             self.form.openSearchPartButton,
@@ -142,11 +145,11 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.search_parts
         )
-        QtCore.QObject.connect(
-            self.form.partSearchEdit,
-            QtCore.SIGNAL("returnPressed()"),
-            self.search_parts
-        )
+        # QtCore.QObject.connect(
+        #     self.form.partSearchEdit,
+        #     QtCore.SIGNAL("returnPressed()"),
+        #     self.search_parts
+        # )
         # QtCore.QObject.connect(
         #     self.form.workspaceBrowseButton,
         #     QtCore.SIGNAL("pressed()"),
@@ -223,158 +226,158 @@ class TaackPlmTaskPanel(object):
     #     #             "Available only when a FreeCAD 1.1 Assembly is active."
     #     #         )
 
-    def get_active_assembly(self):
-        """
-        Return the active FreeCAD 1.1 Assembly::AssemblyObject.
+    # def get_active_assembly(self):
+    #     """
+    #     Return the active FreeCAD 1.1 Assembly::AssemblyObject.
+    #
+    #     Returns None when the active document is not a FreeCAD Assembly.
+    #     """
+    #     doc = FreeCAD.ActiveDocument
+    #
+    #     if doc is None:
+    #         return None
+    #
+    #     for obj in doc.Objects:
+    #         try:
+    #             if obj.isDerivedFrom("Assembly::AssemblyObject"):
+    #                 return obj
+    #         except Exception:
+    #             pass
+    #
+    #     return None
 
-        Returns None when the active document is not a FreeCAD Assembly.
-        """
-        doc = FreeCAD.ActiveDocument
+    # def add_to_assembly(self):
+    #
+    #     assembly_doc = FreeCAD.ActiveDocument
+    #     assembly = self.get_active_assembly()
+    #
+    #     if assembly_doc is None or assembly is None:
+    #         FreeCAD.Console.PrintWarning(
+    #             "Add to Assembly cancelled: "
+    #             "the active document is not a FreeCAD 1.1 Assembly.\n"
+    #         )
+    #         return
+    #
+    #     try:
+    #         # Remember the assembly before downloading/opening anything.
+    #         assembly_doc_name = assembly_doc.Name
+    #
+    #         # Download the selected PLM part using the existing code.
+    #         freecad_file = self.add_to_workspace()
+    #
+    #         if not freecad_file:
+    #             return
+    #
+    #         if not os.path.isfile(freecad_file):
+    #             raise ValueError(
+    #                 "The downloaded FreeCAD file does not exist:\n"
+    #                 + freecad_file
+    #             )
+    #
+    #         # Open the downloaded part.
+    #         part_doc = FreeCAD.openDocument(freecad_file)
+    #
+    #         if part_doc is None:
+    #             raise ValueError(
+    #                 "Could not open the downloaded FreeCAD part."
+    #             )
+    #
+    #         # Find a suitable object to use as the component.
+    #         part_object = None
+    #
+    #         # Prefer an Assembly, Part, or Body as the component root.
+    #         for obj in part_doc.Objects:
+    #             try:
+    #                 if obj.isDerivedFrom("Assembly::AssemblyObject"):
+    #                     part_object = obj
+    #                     break
+    #
+    #                 if obj.isDerivedFrom("App::Part"):
+    #                     part_object = obj
+    #                     break
+    #
+    #                 if obj.isDerivedFrom("PartDesign::Body"):
+    #                     part_object = obj
+    #                     break
+    #
+    #             except Exception:
+    #                 pass
+    #
+    #         # If none of the preferred containers exists, look for a
+    #         # normal geometric object.
+    #         if part_object is None:
+    #             for obj in part_doc.Objects:
+    #                 try:
+    #                     if obj.isDerivedFrom("Part::Feature"):
+    #                         part_object = obj
+    #                         break
+    #                 except Exception:
+    #                     pass
+    #
+    #         if part_object is None:
+    #             raise ValueError(
+    #                 "Could not find a suitable component in the downloaded part."
+    #             )
+    #
+    #         # Restore the assembly document as the active document.
+    #         FreeCAD.setActiveDocument(assembly_doc_name)
+    #
+    #         assembly_doc = FreeCAD.getDocument(assembly_doc_name)
+    #
+    #         if assembly_doc is None:
+    #             raise ValueError(
+    #                 "Could not restore the active Assembly document."
+    #             )
+    #
+    #         # Create the Assembly component link.
+    #         link_name = "PLM_" + part_object.Name
+    #
+    #         link = assembly_doc.addObject(
+    #             "App::Link",
+    #             link_name
+    #         )
+    #
+    #         link.Label = part_object.Label
+    #         link.setLink(part_object)
+    #
+    #         # Assembly::AssemblyObject derives from App::Part,
+    #         # so the link can be added directly to the assembly.
+    #         assembly.addObject(link)
+    #
+    #         assembly_doc.recompute()
+    #
+    #         FreeCAD.Console.PrintMessage(
+    #             "Added PLM part to Assembly: "
+    #             + part_object.Label
+    #             + "\n"
+    #         )
+    #
+    #         if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+    #             self.form.searchPartMessageLabel.setText(
+    #                 "Part added to Assembly."
+    #             )
+    #         else:
+    #             self.form.browseMessageLabel.setText(
+    #                 "Part added to Assembly."
+    #             )
+    #
+    #     except Exception as e:
+    #
+    #         message = "Error adding part to Assembly: " + str(e)
+    #
+    #         if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
+    #             self.form.searchPartMessageLabel.setText(message)
+    #         else:
+    #             self.form.browseMessageLabel.setText(message)
+    #
+    #         FreeCAD.Console.PrintError(message + "\n")
 
-        if doc is None:
-            return None
-
-        for obj in doc.Objects:
-            try:
-                if obj.isDerivedFrom("Assembly::AssemblyObject"):
-                    return obj
-            except Exception:
-                pass
-
-        return None
-
-    def add_to_assembly(self):
-
-        assembly_doc = FreeCAD.ActiveDocument
-        assembly = self.get_active_assembly()
-
-        if assembly_doc is None or assembly is None:
-            FreeCAD.Console.PrintWarning(
-                "Add to Assembly cancelled: "
-                "the active document is not a FreeCAD 1.1 Assembly.\n"
-            )
-            return
-
-        try:
-            # Remember the assembly before downloading/opening anything.
-            assembly_doc_name = assembly_doc.Name
-
-            # Download the selected PLM part using the existing code.
-            freecad_file = self.add_to_workspace()
-
-            if not freecad_file:
-                return
-
-            if not os.path.isfile(freecad_file):
-                raise ValueError(
-                    "The downloaded FreeCAD file does not exist:\n"
-                    + freecad_file
-                )
-
-            # Open the downloaded part.
-            part_doc = FreeCAD.openDocument(freecad_file)
-
-            if part_doc is None:
-                raise ValueError(
-                    "Could not open the downloaded FreeCAD part."
-                )
-
-            # Find a suitable object to use as the component.
-            part_object = None
-
-            # Prefer an Assembly, Part, or Body as the component root.
-            for obj in part_doc.Objects:
-                try:
-                    if obj.isDerivedFrom("Assembly::AssemblyObject"):
-                        part_object = obj
-                        break
-
-                    if obj.isDerivedFrom("App::Part"):
-                        part_object = obj
-                        break
-
-                    if obj.isDerivedFrom("PartDesign::Body"):
-                        part_object = obj
-                        break
-
-                except Exception:
-                    pass
-
-            # If none of the preferred containers exists, look for a
-            # normal geometric object.
-            if part_object is None:
-                for obj in part_doc.Objects:
-                    try:
-                        if obj.isDerivedFrom("Part::Feature"):
-                            part_object = obj
-                            break
-                    except Exception:
-                        pass
-
-            if part_object is None:
-                raise ValueError(
-                    "Could not find a suitable component in the downloaded part."
-                )
-
-            # Restore the assembly document as the active document.
-            FreeCAD.setActiveDocument(assembly_doc_name)
-
-            assembly_doc = FreeCAD.getDocument(assembly_doc_name)
-
-            if assembly_doc is None:
-                raise ValueError(
-                    "Could not restore the active Assembly document."
-                )
-
-            # Create the Assembly component link.
-            link_name = "PLM_" + part_object.Name
-
-            link = assembly_doc.addObject(
-                "App::Link",
-                link_name
-            )
-
-            link.Label = part_object.Label
-            link.setLink(part_object)
-
-            # Assembly::AssemblyObject derives from App::Part,
-            # so the link can be added directly to the assembly.
-            assembly.addObject(link)
-
-            assembly_doc.recompute()
-
-            FreeCAD.Console.PrintMessage(
-                "Added PLM part to Assembly: "
-                + part_object.Label
-                + "\n"
-            )
-
-            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
-                self.form.searchPartMessageLabel.setText(
-                    "Part added to Assembly."
-                )
-            else:
-                self.form.browseMessageLabel.setText(
-                    "Part added to Assembly."
-                )
-
-        except Exception as e:
-
-            message = "Error adding part to Assembly: " + str(e)
-
-            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
-                self.form.searchPartMessageLabel.setText(message)
-            else:
-                self.form.browseMessageLabel.setText(message)
-
-            FreeCAD.Console.PrintError(message + "\n")
-
-    def is_active_assembly(self):
-        """
-        Return True only when the active document contains
-        a FreeCAD 1.1 Assembly workbench assembly.
-        """
-        return self.get_active_assembly() is not None
+    # def is_active_assembly(self):
+    #     """
+    #     Return True only when the active document contains
+    #     a FreeCAD 1.1 Assembly workbench assembly.
+    #     """
+    #     return self.get_active_assembly() is not None
 
     def save_workspace(self, workspace):
         self.po.settings.setValue("workspace", workspace)
@@ -729,37 +732,37 @@ class TaackPlmTaskPanel(object):
             # ---------------------------------------------------------
             # Get the selected part depending on which tab is active
             # ---------------------------------------------------------
-            if current_widget == self.form.searchPartTab:
-                # Search Part uses QListWidgetItem.
-                item = self.form.partSearchList.currentItem()
+            # if current_widget == self.form.searchPartTab:
+            # Search Part uses QListWidgetItem.
+            item = self.form.modelTable.currentItem()
 
-                if item is None:
-                    raise ValueError("Select a part to add to the workspace.")
+            if item is None:
+                raise ValueError("Select a part to add to the workspace.")
 
-                # QListWidgetItem.data() takes only the role.
-                part_id = item.data(QtCore.Qt.UserRole)
-                part_data = item.data(QtCore.Qt.UserRole + 1)
+            # QListWidgetItem.data() takes only the role.
+            part_id = item.data(QtCore.Qt.UserRole)
+            part_data = item.data(QtCore.Qt.UserRole + 1)
 
-                message_label = self.form.searchPartMessageLabel
+            message_label = self.form.searchPartMessageLabel
 
-            else:
-                # Browse by Tag uses QTreeWidgetItem.
-                selected_items = self.form.browseTree.selectedItems()
-
-                if not selected_items:
-                    raise ValueError("Select a part to add to the workspace.")
-
-                item = selected_items[0]
-
-                if not self.browseShowingParts:
-                    raise ValueError("Select a part, not a tag.")
-
-                # QTreeWidgetItem.data() requires:
-                #   data(column, role)
-                part_id = item.data(0, QtCore.Qt.UserRole)
-                part_data = item.data(0, QtCore.Qt.UserRole + 1)
-
-                message_label = self.form.browseMessageLabel
+            # else:
+            #     # Browse by Tag uses QTreeWidgetItem.
+            #     selected_items = self.form.browseTree.selectedItems()
+            #
+            #     if not selected_items:
+            #         raise ValueError("Select a part to add to the workspace.")
+            #
+            #     item = selected_items[0]
+            #
+            #     if not self.browseShowingParts:
+            #         raise ValueError("Select a part, not a tag.")
+            #
+            #     # QTreeWidgetItem.data() requires:
+            #     #   data(column, role)
+            #     part_id = item.data(0, QtCore.Qt.UserRole)
+            #     part_data = item.data(0, QtCore.Qt.UserRole + 1)
+            #
+            #     message_label = self.form.browseMessageLabel
 
             # ---------------------------------------------------------
             # Validate the selected part
@@ -1003,34 +1006,10 @@ class TaackPlmTaskPanel(object):
             return None
 
     def open_in_freecad(self):
-
         try:
-
-            # Search Part tab
-            if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
-
-                if self.form.partSearchList.currentItem() is None:
-                    self.form.searchPartMessageLabel.setText(
-                        "Please select a part first."
-                    )
-                    return
-
-            # Browse by Tags tab
-            else:
-
-                selected_items = self.form.browseTree.selectedItems()
-
-                if not selected_items:
-                    self.form.browseMessageLabel.setText(
-                        "Please select a part first."
-                    )
-                    return
-
-                if not self.browseShowingParts:
-                    self.form.browseMessageLabel.setText(
-                        "Please select a part, not a tag."
-                    )
-                    return
+            if self.form.modelTable.currentItem() is None:
+                self.form.searchPartMessageLabel.setText("Please select a part first.")
+                return
 
             # Use the same download/workspace function
             freecad_file = self.add_to_workspace()
@@ -1086,7 +1065,7 @@ class TaackPlmTaskPanel(object):
         the results in the Search Part list.
         """
 
-        self.form.partSearchList.clear()
+        self.form.modelTable.clear()
         self.form.searchPartMessageLabel.clear()
 
         search_text = self.form.partSearchEdit.text().strip()
@@ -1157,15 +1136,15 @@ class TaackPlmTaskPanel(object):
                     part
                 )
 
-                self.form.partSearchList.addItem(item)
+                self.form.modelTable.addItem(item)
 
-            if self.form.partSearchList.count() == 0:
+            if self.form.modelTable.count() == 0:
                 self.form.searchPartMessageLabel.setText(
                     "No parts found."
                 )
             else:
                 self.form.searchPartMessageLabel.setText(
-                    str(self.form.partSearchList.count()) +
+                    str(self.form.modelTable.count()) +
                     " part(s) found."
                 )
 
@@ -1490,7 +1469,7 @@ class TaackPlmTaskPanel(object):
                                                   timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
-                self.get_server_info()
+                # self.get_server_info()
                 self.po.user = self.form.userEdit.text()
                 self.po.url = self.form.urlEdit.text()
                 self.po.passwd = self.form.passEdit.text()
@@ -1830,41 +1809,41 @@ class TaackPlmTaskPanel(object):
 
         return linked_doc.Name
 
-    def get_server_info(self):
-        try:
-            url = self.po.url + 'plmJson/serverInfo'
-
-            response = self.po.taackIntranetSession.get(url, timeout=10)
-            response.raise_for_status()
-
-            server_info = response.json()
-
-            server_version = server_info.get("serverVersion", "Unknown")
-            protocol_version = server_info.get("messagingProtocolVersion", "Unknown")
-            maximum_upload_size = server_info.get("maximumFileUploadSize")
-
-            self.form.serverVersionValue.setText(str(server_version))
-            self.form.messagingProtocolVersionValue.setText(str(protocol_version))
-
-            if maximum_upload_size is not None:
-                # Convert bytes to MB
-                size_mb = maximum_upload_size / (1024 * 1024)
-
-                if size_mb >= 1024:
-                    size_text = f"{size_mb / 1024:.1f} GB"
-                else:
-                    size_text = f"{size_mb:.0f} MB"
-
-                self.form.maximumFileUploadSizeValue.setText(size_text)
-            else:
-                self.form.maximumFileUploadSizeValue.setText("Unknown")
-
-        except Exception as e:
-            print("Unable to get server information:", e)
-
-            self.form.serverVersionValue.setText("Unknown")
-            self.form.messagingProtocolVersionValue.setText("Unknown")
-            self.form.maximumFileUploadSizeValue.setText("Unknown")
+    # def get_server_info(self):
+    #     try:
+    #         url = self.po.url + 'plmJson/serverInfo'
+    #
+    #         response = self.po.taackIntranetSession.get(url, timeout=10)
+    #         response.raise_for_status()
+    #
+    #         server_info = response.json()
+    #
+    #         server_version = server_info.get("serverVersion", "Unknown")
+    #         protocol_version = server_info.get("messagingProtocolVersion", "Unknown")
+    #         maximum_upload_size = server_info.get("maximumFileUploadSize")
+    #
+    #         self.form.serverVersionValue.setText(str(server_version))
+    #         self.form.messagingProtocolVersionValue.setText(str(protocol_version))
+    #
+    #         if maximum_upload_size is not None:
+    #             # Convert bytes to MB
+    #             size_mb = maximum_upload_size / (1024 * 1024)
+    #
+    #             if size_mb >= 1024:
+    #                 size_text = f"{size_mb / 1024:.1f} GB"
+    #             else:
+    #                 size_text = f"{size_mb:.0f} MB"
+    #
+    #             self.form.maximumFileUploadSizeValue.setText(size_text)
+    #         else:
+    #             self.form.maximumFileUploadSizeValue.setText("Unknown")
+    #
+    #     except Exception as e:
+    #         print("Unable to get server information:", e)
+    #
+    #         self.form.serverVersionValue.setText("Unknown")
+    #         self.form.messagingProtocolVersionValue.setText("Unknown")
+    #         self.form.maximumFileUploadSizeValue.setText("Unknown")
 
 
 if FreeCAD.GuiUp:

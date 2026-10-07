@@ -92,13 +92,6 @@
        <string>Search Part</string>
       </attribute>
       <layout class="QGridLayout" name="searchPartLayout">
-       <item row="3" column="0">
-        <widget class="QPushButton" name="addSearchPartButton">
-         <property name="text">
-          <string>Add to Workspace</string>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="0" colspan="3">
         <widget class="QLabel" name="searchPartMessageLabel">
          <property name="text">
@@ -205,12 +198,14 @@
        <string>Login</string>
       </attribute>
       <layout class="QGridLayout" name="loginLayout">
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Pass</string>
-         </property>
-        </widget>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="userEdit"/>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="urlEdit"/>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="workspaceEdit"/>
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="urlLabel">
@@ -219,10 +214,28 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="userEdit"/>
-       </item>
        <item row="6" column="0" colspan="2">
+        <widget class="QPushButton" name="disconnectButton">
+         <property name="text">
+          <string>Disconnect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QPushButton" name="connectButton">
+         <property name="text">
+          <string>Connect</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Pass</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0" colspan="2">
         <spacer name="loginSpacer">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
@@ -234,13 +247,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="workspaceLabel">
-         <property name="text">
-          <string>Workspace Directory</string>
-         </property>
-        </widget>
        </item>
        <item row="2" column="1">
         <widget class="QLineEdit" name="passEdit">
@@ -257,22 +263,19 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLineEdit" name="workspaceEdit"/>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="urlEdit"/>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="connectButton">
+        <widget class="QPushButton" name="pushButton">
          <property name="text">
-          <string>Connect</string>
+          <string>Choose Folder</string>
+         </property>
+         <property name="icon">
+          <iconset theme="QIcon::ThemeIcon::FolderNew"/>
          </property>
         </widget>
        </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QPushButton" name="disconnectButton">
+       <item row="3" column="0">
+        <widget class="QLabel" name="workspaceLabel">
          <property name="text">
-          <string>Disconnect</string>
+          <string>Workspace Directory</string>
          </property>
         </widget>
        </item>
