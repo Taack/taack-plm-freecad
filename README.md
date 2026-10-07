@@ -1,6 +1,6 @@
-# Taack PLM workbench for FreeCAD
+# Parts Manager PLM workbench for FreeCAD
 
-This workbench contains tools to interact with Taack Plm Intranet server app you can find under the https://github.com/Taack/plm
+This workbench contains tools to interact with Part Manager Plm app you can find under the https://github.com/
 
 ## Installation
 
@@ -8,20 +8,14 @@ Workbench dependencies should be managed directly with FreeCAD, install both pro
 
 This Workbench is part of the [FreeCAD addons](https://github.com/FreeCAD/FreeCAD-addons) collection and can be simply installed from the Addons manager.
 
-To install the server, follow instructions under [Taack PLM page](https://taack.org/en/app/Plm).
-
-Forum entry:
-https://forum.freecad.org/viewtopic.php?t=75937
-
 ## Usage
 
 ### Connect to the Server
 
 Under Freecad:
 
-* Select the Taack PLM Workbench
+* Select the Parts Manager PLM Workbench
 * Select a file you need to upload (if not already done, save it before)
-* Click on the **Taack** icon
 
 The first time, you will be prompted for entering the server URL, along with your user credentials:
 
@@ -41,7 +35,7 @@ If the **Connect** Button turns disabled, you are connected to your Intranet Ser
 Once you are connected
 
 * Ensure a file is selected (if not already done, save it before uploading)
-* click on the **Taack** icon (2nd point in the previous screenshot)
+* click on the **Parts Manager PLM** icon (2nd point in the previous screenshot)
 * click on the **Check-In** tab
 * click on the **Upload** Button
 
