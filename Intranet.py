@@ -311,13 +311,9 @@ class TaackPlmTaskPanel(object):
 
             if item is None:
                 raise ValueError("Select a part to add to the workspace.")
-            part_id = item.data(QtCore.Qt.UserRole)
-            part_data = item.data(QtCore.Qt.UserRole + 1)
-
+            part = item.data(QtCore.Qt.UserRole)
+            part_id = part.get("id")
             message_label = self.form.searchPartMessageLabel
-
-            if part_id is None:
-                raise ValueError("The selected part does not have a valid PLM ID.")
 
             if not self.po.connected:
                 raise ValueError("Not connected to the PLM server.")
@@ -335,14 +331,7 @@ class TaackPlmTaskPanel(object):
             # ---------------------------------------------------------
             # Try to determine the original FreeCAD filename
             # ---------------------------------------------------------
-            expected_name = None
-
-            if isinstance(part_data, dict):
-                expected_name = (
-                        part_data.get("originalName") or
-                        part_data.get("name") or
-                        part_data.get("label")
-                )
+            expected_name = part.get("pathOnHost")
 
             # ---------------------------------------------------------
             # If the part is already in the workspace, don't download it
@@ -352,24 +341,6 @@ class TaackPlmTaskPanel(object):
 
                 if not expected_name.lower().endswith(".fcstd"):
                     expected_name += ".FCStd"
-
-                existing_file = os.path.join(
-                    workspace,
-                    expected_name
-                )
-
-                # if os.path.isfile(existing_file):
-                #     message_label.setText(
-                #         "Part is already in the workspace."
-                #     )
-                #
-                #     FreeCAD.Console.PrintMessage(
-                #         "Part already exists in workspace: "
-                #         + existing_file
-                #         + "\n"
-                #     )
-                #
-                #     return existing_file
 
             # ---------------------------------------------------------
             # Build download URL
@@ -429,11 +400,7 @@ class TaackPlmTaskPanel(object):
             with open(zip_path, "wb") as f:
                 f.write(response.content)
 
-            FreeCAD.Console.PrintMessage(
-                "Downloaded PLM part to: "
-                + zip_path
-                + "\n"
-            )
+            FreeCAD.Console.PrintMessage("Downloaded PLM part to: " + zip_path + "\n")
 
             # ---------------------------------------------------------
             # Find the FreeCAD file inside the ZIP
@@ -443,45 +410,11 @@ class TaackPlmTaskPanel(object):
             freecad_file = None
 
             with zipfile.ZipFile(zip_path, "r") as zip_file:
-
-                members = zip_file.namelist()
-
-                fcstd_members = [
-                    member
-                    for member in members
-                    if member.lower().endswith(".fcstd")
-                ]
-
-                if len(fcstd_members) == 0:
-                    raise ValueError(
-                        "No FreeCAD .FCStd file was found in the downloaded part."
-                    )
-
-                if len(fcstd_members) > 1:
-                    FreeCAD.Console.PrintWarning(
-                        "Multiple FCStd files found in ZIP. "
-                        "Using the first one.\n"
-                    )
-
-                fcstd_member = fcstd_members[0]
-
-                FreeCAD.Console.PrintMessage(
-                    "FCStd file in ZIP: "
-                    + fcstd_member
-                    + "\n"
-                )
-
-                # Extract the ZIP into the workspace.
                 zip_file.extractall(workspace)
-
-                # ZIP entries can begin with '/'.
-                # Remove the leading slash before joining with workspace.
-                relative_fcstd = fcstd_member.lstrip("/\\")
-
                 freecad_file = os.path.abspath(
                     os.path.join(
                         workspace,
-                        relative_fcstd
+                        expected_name
                     )
                 )
 
@@ -671,8 +604,7 @@ class TaackPlmTaskPanel(object):
                 )
 
                 item = QtGui.QTableWidgetItem(str(part_name))
-                item.setData(QtCore.Qt.UserRole,part_id)
-                item.setData(QtCore.Qt.UserRole + 1, part)
+                item.setData(QtCore.Qt.UserRole,part)
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
                 item2 = QtGui.QTableWidgetItem(str(part.get("userCreated")))
                 item2.setFlags(QtCore.Qt.ItemIsEnabled)
