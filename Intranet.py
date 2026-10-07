@@ -702,7 +702,9 @@ class TaackPlmTaskPanel(object):
                         plm_file.externalLink.append(lp)
 
             # plm_file.fileContent = open(obj.FileName, 'rb').read()
-            plm_file.filePreview = self.create_thumbnail(obj.FileName)
+            thumbnail = self.create_thumbnail(obj.FileName)
+            if thumbnail is not None:
+                plm_file.filePreview = thumbnail
             bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
             self.shaOneMap[plm_file.sha1hex] = obj.FileName
 
@@ -723,8 +725,12 @@ class TaackPlmTaskPanel(object):
                 return None
 
             plm_link = PlmBuf.PlmLink()
+            linked_object = obj.LinkedObject
+            if type(obj.LinkedObject) is tuple:
+                print("obj.LinkedObject is a tuple " + str(obj.LinkedObject))
+                linked_object = obj.LinkedObject[0]
 
-            plm_link.linkedObject = obj.LinkedObject.Name
+            plm_link.linkedObject = linked_object.Name
             plm_link.linkClaimChild = obj.LinkClaimChild
 
             if obj.LinkCopyOnChange == 'Disabled':
@@ -738,7 +744,7 @@ class TaackPlmTaskPanel(object):
 
             plm_link.linkTransform = obj.LinkTransform
 
-            linked_doc = obj.LinkedObject.Document
+            linked_doc = linked_object.Document
 
             if linked_doc is None:
                 return None
