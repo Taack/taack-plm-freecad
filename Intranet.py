@@ -96,9 +96,9 @@ class TaackPlmTaskPanel(object):
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
-        self.form.modelTable.setColumnCount(4)
-        #self.form.modelTable.setRowCount(100)
-        self.form.modelTable.setHorizontalHeaderLabels(['Link' ,'Name' , 'creator', 'status'])
+        self.form.modelTable.setColumnCount(5)
+        self.form.modelTable.verticalHeader().setVisible(False)
+        self.form.modelTable.itemClicked.connect(self.open_in_freecad)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
@@ -136,11 +136,12 @@ class TaackPlmTaskPanel(object):
         #     self.add_to_workspace
         # )
 
-        QtCore.QObject.connect(
-            self.form.openSearchPartButton,
-            QtCore.SIGNAL("pressed()"),
-            self.open_in_freecad
-        )
+        # QtCore.QObject.connect(
+        #     self.form.openSearchPartButton,
+        #     QtCore.SIGNAL("pressed()"),
+        #     self.open_in_freecad
+        # )
+
         QtCore.QObject.connect(
             self.form.searchPartButton,
             QtCore.SIGNAL("pressed()"),
@@ -1071,12 +1072,6 @@ class TaackPlmTaskPanel(object):
         is_top_assemblies = self.form.topAssemblies.isChecked()
         model_status = self.form.modelStatus.currentText().strip()
 
-        print("search_text: " + search_text)
-        print("tag_name: " + tag_name)
-        print("is_top_assemblies: " + str(is_top_assemblies))
-        print("is_my_model: " + str(is_my_model))
-        print("model_status: " + model_status)
-
         if not self.po.connected:
             self.form.searchPartMessageLabel.setText(
                 "Not connected to the PLM server."
@@ -1113,6 +1108,9 @@ class TaackPlmTaskPanel(object):
                 )
 
             row_index = 0
+            self.form.modelTable.setHorizontalHeaderLabels(["Name" , "Creator", "status", "Version", "Date"])
+            self.form.modelTable.setRowCount(len(parts))
+
             for part in parts:
 
                 if not isinstance(part, dict):
@@ -1128,37 +1126,25 @@ class TaackPlmTaskPanel(object):
                         str(part_id)
                 )
 
-                item = QtGui.QTableWidgetItem(
-                    str(part_name)
-                )
-
-                # Store the PLM part ID in the list item.
-                item.setData(
-                    QtCore.Qt.UserRole,
-                    part_id
-                )
-
-                # Keep the complete server result available.
-                item.setData(
-                    QtCore.Qt.UserRole + 1,
-                    part
-                )
-
-                self.form.modelTable.setItem(row_index, 0, QtGui.QTableWidgetItem(str(part_id)))
-                self.form.modelTable.setItem(row_index, 1, item)
-                self.form.modelTable.setItem(row_index, 2, QtGui.QTableWidgetItem(str(part.get("userCreated"))))
-                self.form.modelTable.setItem(row_index, 3, QtGui.QTableWidgetItem(str(part.get("status"))))
+                item = QtGui.QTableWidgetItem(str(part_name))
+                item.setData(QtCore.Qt.UserRole,part_id)
+                item.setData(QtCore.Qt.UserRole + 1, part)
+                item.setFlags(QtCore.Qt.ItemIsEnabled)
+                item2 = QtGui.QTableWidgetItem(str(part.get("userCreated")))
+                item2.setFlags(QtCore.Qt.ItemIsEnabled)
+                item3 = QtGui.QTableWidgetItem(str(part.get("status")['name']))
+                item3.setFlags(QtCore.Qt.ItemIsEnabled)
+                item4 = QtGui.QTableWidgetItem(str(part.get("computedVersion")))
+                item4.setFlags(QtCore.Qt.ItemIsEnabled)
+                item5 = QtGui.QTableWidgetItem(str(part.get("plmFileLastUpdated")))
+                item5.setFlags(QtCore.Qt.ItemIsEnabled)
+                # self.form.modelTable.setItem(row_index, 0, QtGui.QTableWidgetItem(str(part_id)))
+                self.form.modelTable.setItem(row_index, 0, item)
+                self.form.modelTable.setItem(row_index, 1, item2)
+                self.form.modelTable.setItem(row_index, 2, item3)
+                self.form.modelTable.setItem(row_index, 3, item4)
+                self.form.modelTable.setItem(row_index, 4, item5)
                 row_index = row_index + 1
-
-            if self.form.modelTable.count() == 0:
-                self.form.searchPartMessageLabel.setText(
-                    "No parts found."
-                )
-            else:
-                self.form.searchPartMessageLabel.setText(
-                    str(self.form.modelTable.count()) +
-                    " part(s) found."
-                )
 
         except requests.exceptions.RequestException as e:
 
