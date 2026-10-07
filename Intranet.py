@@ -358,18 +358,18 @@ class TaackPlmTaskPanel(object):
                     expected_name
                 )
 
-                if os.path.isfile(existing_file):
-                    message_label.setText(
-                        "Part is already in the workspace."
-                    )
-
-                    FreeCAD.Console.PrintMessage(
-                        "Part already exists in workspace: "
-                        + existing_file
-                        + "\n"
-                    )
-
-                    return existing_file
+                # if os.path.isfile(existing_file):
+                #     message_label.setText(
+                #         "Part is already in the workspace."
+                #     )
+                #
+                #     FreeCAD.Console.PrintMessage(
+                #         "Part already exists in workspace: "
+                #         + existing_file
+                #         + "\n"
+                #     )
+                #
+                #     return existing_file
 
             # ---------------------------------------------------------
             # Build download URL
