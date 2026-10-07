@@ -96,8 +96,9 @@ class TaackPlmTaskPanel(object):
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
-        self.form.modelTable.setColumnCount(3)
-        self.form.modelTable.setHorizontalHeaderLabels(['Name' , 'status', 'creator'])
+        self.form.modelTable.setColumnCount(4)
+        #self.form.modelTable.setRowCount(100)
+        self.form.modelTable.setHorizontalHeaderLabels(['Link' ,'Name' , 'creator', 'status'])
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
@@ -155,11 +156,11 @@ class TaackPlmTaskPanel(object):
         #     QtCore.SIGNAL("pressed()"),
         #     self.browse_workspace
         # )
-        QtCore.QObject.connect(
-            self.form.tabWidget,
-            QtCore.SIGNAL("currentChanged(int)"),
-            self.tab_changed
-        )
+        # QtCore.QObject.connect(
+        #     self.form.tabWidget,
+        #     QtCore.SIGNAL("currentChanged(int)"),
+        #     self.tab_changed
+        # )
         # QtCore.QObject.connect(
         #     self.form.addToAssemblyButton,
         #     QtCore.SIGNAL("pressed()"),
@@ -179,10 +180,10 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setEnabled(False)
             self.form.connectButton.setText('Connected')
 
-    def tab_changed(self, index):
-        """Run actions when a tab is selected."""
-        if self.form.tabWidget.currentWidget() == self.form.loginTab:
-            self.get_server_info()
+    # def tab_changed(self, index):
+    #     """Run actions when a tab is selected."""
+    #     if self.form.tabWidget.currentWidget() == self.form.loginTab:
+    #         self.get_server_info()
     def set_freecad_working_directory(self, workspace):
         if not workspace:
             return
@@ -1060,21 +1061,21 @@ class TaackPlmTaskPanel(object):
             )
 
     def search_parts(self):
-        """
-        Search for PLM parts by originalName and display
-        the results in the Search Part list.
-        """
 
         self.form.modelTable.clear()
         self.form.searchPartMessageLabel.clear()
 
         search_text = self.form.partSearchEdit.text().strip()
+        tag_name = self.form.tagName.text().strip()
+        is_my_model = self.form.myModel.isChecked()
+        is_top_assemblies = self.form.topAssemblies.isChecked()
+        model_status = self.form.modelStatus.currentText().strip()
 
-        if not search_text:
-            self.form.searchPartMessageLabel.setText(
-                "Please enter a part name to search."
-            )
-            return
+        print("search_text: " + search_text)
+        print("tag_name: " + tag_name)
+        print("is_top_assemblies: " + str(is_top_assemblies))
+        print("is_my_model: " + str(is_my_model))
+        print("model_status: " + model_status)
 
         if not self.po.connected:
             self.form.searchPartMessageLabel.setText(
@@ -1088,11 +1089,17 @@ class TaackPlmTaskPanel(object):
             if not base_url.endswith("/"):
                 base_url += "/"
 
-            url = base_url + "plmJson/searchParts"
+            url = base_url + "plmJson/queryModel"
 
             response = self.po.taackIntranetSession.get(
                 url,
-                params={"originalName": search_text},
+                params={
+                    "label": search_text,
+                    "documentCategory.tags.name": tag_name,
+                    "status": model_status,
+                    "isMyModel": is_my_model,
+                    "isTopAssembly": is_top_assemblies,
+                        },
                 timeout=30
             )
 
@@ -1105,6 +1112,7 @@ class TaackPlmTaskPanel(object):
                     "The server returned an invalid parts list."
                 )
 
+            row_index = 0
             for part in parts:
 
                 if not isinstance(part, dict):
@@ -1120,7 +1128,7 @@ class TaackPlmTaskPanel(object):
                         str(part_id)
                 )
 
-                item = QtGui.QListWidgetItem(
+                item = QtGui.QTableWidgetItem(
                     str(part_name)
                 )
 
@@ -1136,7 +1144,11 @@ class TaackPlmTaskPanel(object):
                     part
                 )
 
-                self.form.modelTable.addItem(item)
+                self.form.modelTable.setItem(row_index, 0, QtGui.QTableWidgetItem(str(part_id)))
+                self.form.modelTable.setItem(row_index, 1, item)
+                self.form.modelTable.setItem(row_index, 2, QtGui.QTableWidgetItem(str(part.get("userCreated"))))
+                self.form.modelTable.setItem(row_index, 3, QtGui.QTableWidgetItem(str(part.get("status"))))
+                row_index = row_index + 1
 
             if self.form.modelTable.count() == 0:
                 self.form.searchPartMessageLabel.setText(
@@ -1480,7 +1492,7 @@ class TaackPlmTaskPanel(object):
             else:
                 print(r.json()["message"])
                 self.po.connected = False
-                self.get_server_info()
+                #self.get_server_info()
         except:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Can't connect to the intranet.") + "\n")
 
@@ -1492,7 +1504,7 @@ class TaackPlmTaskPanel(object):
 
         if not self.po.connected:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Not connected.") + "\n")
-            self.get_server_info()
+            #self.get_server_info()
             self.form.uploadButton.setEnabled(True)
             self.form.uploadButton.setText("Upload")
             return False
@@ -1568,7 +1580,7 @@ class TaackPlmTaskPanel(object):
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(
                                 translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
-                            self.get_server_info()
+                            #self.get_server_info()
                             self.po.connected = False
                         finally:
                             file_tmp_zip_files.close()
