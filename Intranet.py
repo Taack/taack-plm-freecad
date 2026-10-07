@@ -75,20 +75,20 @@ class TaackPlmTaskPanel(object):
         self.avoidLoop = set()
         self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__), 'taack-plm.ui'))
 
-        # Restore saved workspace directory
-        workspace = self.po.settings.value("workspace", "")
-        if workspace:
-            self.form.workspaceEdit.setText(workspace)
-            self.set_freecad_working_directory(workspace)
-
-        # Save workspace whenever the user changes it
-        QtCore.QObject.connect(self.form.workspaceEdit, QtCore.SIGNAL("textChanged(QString)"), self.save_workspace)
-
         # Select the Login tab when we are not connected.
         if not self.po.connected:
             self.form.tabWidget.setCurrentWidget(
                 self.form.loginTab
             )
+
+        # Restore saved workspace directory
+        workspace = self.po.settings.value("workspace", "")
+        if workspace:
+            self.form.guiFileChooser.setFileName(workspace)
+            self.set_freecad_working_directory(workspace)
+        # Save workspace whenever the user changes it
+        QtCore.QObject.connect(self.form.guiFileChooser, QtCore.SIGNAL("fileNameChanged(QString)"), self.save_workspace)
+
         self.form.userEdit.insert(po.user)
         self.form.passEdit.insert(po.passwd)
         self.form.urlEdit.insert(po.url)
@@ -121,6 +121,7 @@ class TaackPlmTaskPanel(object):
         param.SetString("FileOpenSavePath", workspace)
 
     def save_workspace(self, workspace):
+        print("save_workspace: " + str(workspace))
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
         # Make FreeCAD use the PLM workspace as its default directory
