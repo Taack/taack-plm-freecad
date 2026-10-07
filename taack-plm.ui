@@ -25,65 +25,81 @@
        <string>Check-in</string>
       </attribute>
       <layout class="QGridLayout" name="checkInLayout">
-       <item row="0" column="0">
-        <widget class="QRadioButton" name="forkActive">
+
+     <item row="0" column="0" colspan="2">
+      <layout class="QHBoxLayout" name="uploadListButtonsLayout">
+       <item>
+        <widget class="QPushButton" name="refreshUploadListButton">
          <property name="text">
-          <string>Duplicate Active Part</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
+            <string>↻ Refresh List</string>
+          </property>
+        </widget>
+       </item>
+
+       <item>
+        <widget class="QPushButton" name="removeUploadPartButton">
+         <property name="text">
+          <string>❌ Remove Selected</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
-        <widget class="QRadioButton" name="forkAll">
-         <property name="text">
-          <string>Duplicate All Parts</string>
+
+       <item>
+        <spacer name="uploadListButtonsSpacer">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QRadioButton" name="forkTouched">
-         <property name="text">
-          <string>Duplicate Modified Parts</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="uploadSizeLabel">
-         <property name="text">
-          <string>Data to upload: 0 MB</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QListWidget" name="List">
-         <property name="minimumSize">
+         <property name="sizeHint" stdset="0">
           <size>
-           <width>0</width>
-           <height>100</height>
+           <width>40</width>
+           <height>20</height>
           </size>
          </property>
-        </widget>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QPushButton" name="uploadButton">
-         <property name="text">
-          <string>Upload</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QProgressBar" name="uploadProgress">
-         <property name="value">
-          <number>0</number>
-         </property>
-        </widget>
+        </spacer>
        </item>
       </layout>
+     </item>
+
+     <item row="1" column="0" colspan="2">
+      <widget class="QListWidget" name="List">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>100</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+
+     <item row="2" column="0" colspan="2">
+      <widget class="QLabel" name="uploadSizeLabel">
+       <property name="text">
+        <string>Data to upload: 0 MB</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+
+     <item row="3" column="0" colspan="2">
+      <widget class="QPushButton" name="uploadButton">
+       <property name="text">
+        <string>Upload</string>
+       </property>
+      </widget>
+     </item>
+
+     <item row="4" column="0" colspan="2">
+      <widget class="QProgressBar" name="uploadProgress">
+       <property name="value">
+        <number>0</number>
+       </property>
+      </widget>
+     </item>
+
+    </layout>
+
      </widget>
      <!-- Browse tab -->
      <widget class="QWidget" name="browseTab">

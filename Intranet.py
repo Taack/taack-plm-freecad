@@ -98,14 +98,8 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
-        QtCore.QObject.connect(self.form.forkActive, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
-        QtCore.QObject.connect(self.form.forkAll, QtCore.SIGNAL("toggled(bool)"), self.refresh_part_list)
 
-        QtCore.QObject.connect(
-            self.form.forkTouched,
-            QtCore.SIGNAL("toggled(bool)"),
-            self.refresh_part_list
-        )
+
         QtCore.QObject.connect(
             self.form.uploadButton,
             QtCore.SIGNAL("pressed()"),
@@ -162,7 +156,7 @@ class TaackPlmTaskPanel(object):
         QtCore.QObject.connect(
             self.form.tabWidget,
             QtCore.SIGNAL("currentChanged(int)"),
-            self.tab_changed
+            self.checkin_tab_selected
         )
         QtCore.QObject.connect(
             self.form.addToAssemblyButton,
@@ -174,6 +168,17 @@ class TaackPlmTaskPanel(object):
             QtCore.SIGNAL("pressed()"),
             self.add_to_assembly
         )
+        QtCore.QObject.connect(
+            self.form.refreshUploadListButton,
+            QtCore.SIGNAL("pressed()"),
+            self.refresh_part_list
+        )
+
+        QtCore.QObject.connect(
+            self.form.removeUploadPartButton,
+            QtCore.SIGNAL("pressed()"),
+            self.remove_selected_upload_part
+        )
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setVisible(True)
         self.browseShowingParts = False
@@ -183,6 +188,11 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
             self.form.connectButton.setEnabled(False)
             self.form.connectButton.setText('Connected')
+
+    def checkin_tab_selected(self, index):
+
+        if self.form.tabWidget.widget(index) == self.form.checkInTab:
+            self.refresh_part_list()
     def tab_changed(self, index):
         """Run actions when a tab is selected."""
         if self.form.tabWidget.currentWidget() == self.form.loginTab:
@@ -435,21 +445,29 @@ class TaackPlmTaskPanel(object):
 
         return sha1.hexdigest()
 
-    def add_upload_part_to_list(self, doc):
+
+    def add_upload_part_to_list(self, doc, indent=False):
         if doc is None:
             return
 
         try:
             label = doc.Label
+            name = doc.Name
         except Exception:
             return
 
-        for i in range(self.form.List.count()):
-            if self.form.List.item(i).text() == label:
-                return
+        if indent:
+            label = "    - " + label
 
-        self.form.List.addItem(label)
+        item = QtGui.QListWidgetItem(label)
 
+        # Store the FreeCAD document name, not the displayed text.
+        item.setData(
+            QtCore.Qt.UserRole,
+            name
+        )
+
+        self.form.List.addItem(item)
 
     def get_upload_parts(self):
         """
@@ -484,39 +502,50 @@ class TaackPlmTaskPanel(object):
 
         self._save_modified_baseline(baseline)
 
+
     def get_upload_documents(self):
-        doc = FreeCAD.ActiveDocument
-        if doc is None:
+        """
+        Return the documents that will be updated.
+
+        The active document is always included.
+        Linked documents are discovered recursively and included
+        when they have been modified since the last successful upload.
+        """
+
+        active_doc = FreeCAD.ActiveDocument
+
+        if active_doc is None:
             return []
 
-        # Active document only
-        if self.form.forkActive.isChecked():
-            return [doc]
+        documents = [active_doc]
 
-        # Discover linked documents.
-        all_documents = []
+        all_linked_documents = []
         visited_docs = set()
         visited_objects = set()
-        visited_docs.add(
-            getattr(doc, "Name", str(id(doc)))
+
+        active_name = getattr(
+            active_doc,
+            "Name",
+            str(id(active_doc))
         )
-        for obj in getattr(doc, "Objects", []):
-            self.scan_object_for_links(obj, all_documents, visited_docs, visited_objects)
 
-        # All parts
-        if self.form.forkAll.isChecked():
-            return all_documents
+        visited_docs.add(active_name)
 
-        # Modified parts
-        if self.form.forkTouched.isChecked():
-            modified_documents = []
+        # Find every linked document recursively.
+        for obj in getattr(active_doc, "Objects", []):
+            self.scan_object_for_links(
+                obj,
+                all_linked_documents,
+                visited_docs,
+                visited_objects
+            )
 
-            for linked_doc in all_documents:
-                if self._document_was_modified(linked_doc, doc):
-                    modified_documents.append(linked_doc)
-            return modified_documents
+        # Add only linked documents that need updating.
+        for linked_doc in all_linked_documents:
+            if self._document_was_modified(linked_doc, active_doc):
+                documents.append(linked_doc)
 
-        return []
+        return documents
 
     def get_linked_documents_recursive(
             self,
@@ -802,34 +831,314 @@ class TaackPlmTaskPanel(object):
             visited_documents
         )
 
+    def remove_selected_upload_part(self):
+        row = self.form.List.currentRow()
+
+        if row < 0:
+            FreeCAD.Console.PrintWarning(
+                "No upload part selected.\n"
+            )
+            return
+
+        item = self.form.List.takeItem(row)
+
+        if item is not None:
+            del item
+
+        # Recalculate the displayed upload size using
+        # exactly what remains in the Check In list.
+        self.update_upload_size(
+            self.get_documents_from_upload_list()
+        )
+
+    def check_workspace_parts(self, documents):
+
+        if not self.po.connected:
+            return
+
+        if not documents:
+            return
+
+        try:
+            workspace = self.form.workspaceEdit.text().strip()
+
+            if not workspace:
+                print("No workspace directory configured.")
+                return
+
+            workspace = os.path.abspath(
+                os.path.expanduser(workspace)
+            )
+
+            base_url = self.po.url.rstrip("/") + "/"
+            url = base_url + "plmJson/workspaceParts"
+
+            parts = []
+
+            for doc in documents:
+
+                filename = getattr(doc, "FileName", "")
+
+                if not filename:
+                    continue
+
+                filename = os.path.abspath(filename)
+
+                try:
+                    relative_path = os.path.relpath(
+                        filename,
+                        workspace
+                    )
+                except ValueError:
+                    relative_path = os.path.basename(filename)
+
+                parts.append({
+                    "name": getattr(doc, "Name", ""),
+                    "relativePath": relative_path
+                })
+
+            if not parts:
+                return
+
+            request_data = {
+                "workspace": os.path.basename(
+                    os.path.normpath(workspace)
+                ),
+                "parts": parts
+            }
+
+            print("")
+            print("======================================")
+            print("CHECKING WORKSPACE PARTS")
+            print("======================================")
+            print("Request:")
+            print(request_data)
+            print("AUTHENTICATION COOKIES:")
+            print(self.po.taackIntranetSession.cookies)
+            response = self.po.taackIntranetSession.post(
+                url,
+                json=request_data,
+                timeout=10
+            )
+
+            print("HTTP STATUS:")
+            print(response.status_code)
+
+            print("RESPONSE HEADERS:")
+            print(response.headers)
+
+            print("RESPONSE BODY:")
+            print(response.text)
+
+            response.raise_for_status()
+
+            result = response.json()
+            print("")
+            print("======================================")
+            print("WORKSPACE PARTS SERVER RESPONSE")
+            print("======================================")
+            print(result)
+            print("======================================")
+
+            print("Server response:")
+            print(result)
+
+            server_parts = result.get("parts", [])
+
+            if not isinstance(server_parts, list):
+                print("Invalid workspaceParts response.")
+                return
+
+            # ---------------------------------------------------------
+            # Build lookup table using the server filename.
+            # ---------------------------------------------------------
+
+            server_by_name = {}
+
+            for server_part in server_parts:
+
+                if not isinstance(server_part, dict):
+                    continue
+
+                name = server_part.get("name")
+
+                if not name:
+                    continue
+
+                name = os.path.basename(str(name))
+
+                server_by_name[name.lower()] = server_part
+
+                print(
+                    "SERVER PART: " +
+                    name +
+                    " STATUS: " +
+                    str(server_part.get("plmStatus"))
+                )
+
+            # ---------------------------------------------------------
+            # Color the Check-in list.
+            # ---------------------------------------------------------
+
+            for i in range(self.form.List.count()):
+
+                item = self.form.List.item(i)
+
+                if item is None:
+                    continue
+
+                document_name = item.data(
+                    QtCore.Qt.UserRole
+                )
+
+                if not document_name:
+                    continue
+
+                server_part = server_by_name.get(
+                    str(document_name).lower()
+                )
+
+                if server_part is None:
+                    print(
+                        "No server information for: " +
+                        filename
+                    )
+                    continue
+
+                status = str(
+                    server_part.get(
+                        "plmStatus",
+                        ""
+                    )
+                ).upper()
+
+                print(
+                    "CHECK: " +
+                    filename +
+                    " -> " +
+                    status
+                )
+
+                if status == "LOCKED":
+                    item.setForeground(
+                        QtGui.QBrush(
+                            QtGui.QColor(255, 0, 0)
+                        )
+                    )
+
+                    print(
+                        "LOCKED - marked red: " +
+                        filename
+                    )
+
+        except requests.exceptions.RequestException as e:
+
+            print(
+                "workspaceParts request failed: " +
+                str(e)
+            )
+
+        except Exception as e:
+
+            print(
+                "Error checking workspace parts: " +
+                str(e)
+            )
+
     def refresh_part_list(self):
 
         self.form.List.clear()
         self.form.uploadProgress.setValue(0)
 
         documents = self.get_upload_documents()
-        # Update the amount of data to upload
-        self.update_upload_size(documents)
+
         print("")
         print("======================================")
         print("DOCUMENTS SHOWN IN UPLOAD LIST")
         print("======================================")
 
-        for doc in documents:
+        print("DOCUMENT COUNT:", len(documents))
+
+        for index, doc in enumerate(documents):
             print(
-                doc.Name +
+                str(index) +
+                ": " +
+                getattr(doc, "Name", "NO NAME") +
                 " / " +
-                doc.Label
+                getattr(doc, "Label", "NO LABEL")
             )
 
-            self.add_upload_part_to_list(doc)
+            # First document = active/root document
+            # Everything else = linked document
+            self.add_upload_part_to_list(
+                doc,
+                indent=(index > 0)
+            )
 
         print(
-            "TOTAL SHOWN: " +
-            str(len(documents))
+            "LIST WIDGET COUNT:",
+            self.form.List.count()
         )
 
         print("======================================")
+
+        self.update_upload_size(documents)
+
+        # Check server for locked parts AFTER the list has been created.
+        self.check_workspace_parts(documents)
+
+    def normalize_fcstd_name(self, filename):
+        name = os.path.basename(str(filename))
+
+        while name.lower().endswith(".fcstd.fcstd"):
+            name = name[:-6]
+
+        return name
+    def add_upload_part_to_list(self, doc, indent=False):
+
+        if doc is None:
+            return
+
+        try:
+            label = doc.Label
+            name = doc.Name
+            filename = doc.FileName
+        except Exception as e:
+            print("Could not add document to upload list:", e)
+            return
+
+        # Do not add the same FreeCAD document twice.
+        for i in range(self.form.List.count()):
+
+            existing_item = self.form.List.item(i)
+
+            existing_name = existing_item.data(
+                QtCore.Qt.UserRole
+            )
+
+            if existing_name == name:
+                return
+
+        display_label = label
+
+        if indent:
+            display_label = "    - " + label
+
+        item = QtGui.QListWidgetItem(display_label)
+
+        # Store FreeCAD document name.
+        item.setData(
+            QtCore.Qt.UserRole,
+            name
+        )
+
+        # Store full filename.
+        item.setData(
+            QtCore.Qt.UserRole + 1,
+            filename
+        )
+
+        self.form.List.addItem(item)
     def update_upload_size(self, documents=None):
         """Update the upload size label with the total size of the selected documents."""
 
@@ -840,7 +1149,12 @@ class TaackPlmTaskPanel(object):
 
         for doc in documents:
             filename = getattr(doc, "FileName", "")
-
+            print(
+                "DOCUMENT FILE:",
+                getattr(doc, "Name", ""),
+                getattr(doc, "Label", ""),
+                filename
+            )
             if not filename:
                 continue
 
@@ -1679,7 +1993,6 @@ class TaackPlmTaskPanel(object):
 
     def upload_current_active_doc(self):
 
-        self.form.List.clear()
         self.form.uploadProgress.setValue(0)
         self.form.uploadButton.setEnabled(False)
         self.form.uploadButton.setText("Uploading...")
@@ -1844,43 +2157,170 @@ class TaackPlmTaskPanel(object):
 
         return result == QtGui.QMessageBox.Yes
 
+    def get_documents_from_upload_list(self):
+        """
+        Return the FreeCAD Documents currently shown in the Check In list.
 
+        The Check In QListWidget is the authoritative source for which
+        documents will be uploaded.
+        """
+
+        documents_by_name = {}
+
+        # Build a lookup of currently available FreeCAD documents.
+        active_doc = FreeCAD.ActiveDocument
+
+        if active_doc is not None:
+            documents_by_name[active_doc.Name] = active_doc
+
+        # Also include all documents currently open in FreeCAD.
+        for doc in FreeCAD.listDocuments().values():
+            try:
+                documents_by_name[doc.Name] = doc
+            except Exception:
+                pass
+
+        upload_documents = []
+
+        for i in range(self.form.List.count()):
+
+            item = self.form.List.item(i)
+
+            if item is None:
+                continue
+
+            document_name = item.data(QtCore.Qt.UserRole)
+
+            if not document_name:
+                continue
+
+            document_name = str(document_name)
+
+            doc = documents_by_name.get(document_name)
+
+            if doc is None:
+                print(
+                    "WARNING: Document from Check In list is not open: " +
+                    document_name
+                )
+                continue
+
+            upload_documents.append(doc)
+
+        return upload_documents
 
     ### FreeCAD <-> protobuf conversion tools
 
     def create_bucket_protobuf(self):
 
         print("createBucketProtobuf")
+
         self.shaOneMap = dict()
-        parts = self.get_upload_documents()
+
         bucket = PlmBuf.Bucket()
 
-        for part in parts:
-            self.create_doc_protobuf(part, bucket)
+        # ---------------------------------------------------------
+        # The Check In list is the source of truth.
+        # ---------------------------------------------------------
+        upload_documents = self.get_documents_from_upload_list()
 
-        self.form.uploadSizeLabel
+        print("")
+        print("======================================")
+        print("DOCUMENTS FROM CHECK IN LIST")
+        print("======================================")
+
+        for doc in upload_documents:
+            print(
+                "UPLOAD: " +
+                doc.Name +
+                " / " +
+                doc.Label
+            )
+
+        print(
+            "TOTAL DOCUMENTS: " +
+            str(len(upload_documents))
+        )
+
+        print("======================================")
+
+        if not upload_documents:
+            raise ValueError(
+                "The Check In list is empty. There are no documents to upload."
+            )
+
+        # ---------------------------------------------------------
+        # These are the ONLY documents allowed in this protobuf.
+        # ---------------------------------------------------------
+        allowed_documents = set()
+
+        for doc in upload_documents:
+            allowed_documents.add(doc.Name)
+
+        # ---------------------------------------------------------
+        # Create protobuf for exactly the documents shown in the
+        # Check In list.
+        # ---------------------------------------------------------
+        for doc in upload_documents:
+            self.create_doc_protobuf(
+                doc,
+                bucket,
+                allowed_documents
+            )
+
         return bucket
 
-    def create_doc_protobuf(self, obj, bucket):
 
+    def create_doc_protobuf(
+            self,
+            obj,
+            bucket,
+            allowed_documents):
         if obj is None:
+            return None
+
+        # ---------------------------------------------------------
+        # Only documents in the Check In list may be uploaded.
+        # ---------------------------------------------------------
+        if obj.Name not in allowed_documents:
+            print(
+                "SKIPPING NOT IN CHECK IN LIST: " +
+                obj.Name +
+                " / " +
+                obj.Label
+            )
             return None
 
         # A document must have FileName.
         if not hasattr(obj, "FileName"):
             raise ValueError(
-                "Upload error: object '" + getattr(obj, "Label", "<unknown>") + "' is not a FreeCAD Document. Type: " +
-                getattr(obj, "TypeId", "<unknown>"))
+                "Upload error: object '" +
+                getattr(obj, "Label", "<unknown>") +
+                "' is not a FreeCAD Document. Type: " +
+                getattr(obj, "TypeId", "<unknown>")
+            )
 
-        print("createDocProtobuf: " +obj.Name + " / " + obj.Label)
+        print(
+            "createDocProtobuf: " +
+            obj.Name +
+            " / " +
+            obj.Label
+        )
 
         try:
             if obj.Name in self.avoidLoop:
+
+                if obj.Name in bucket.plmFiles:
+                    return obj.Name
+
                 return None
 
             self.avoidLoop.add(obj.Name)
+
             plm_file = PlmBuf.PlmFile()
+
             s = os.stat(obj.FileName)
+
             plm_file.cTimeNs = s.st_ctime_ns
             plm_file.uTimeNs = s.st_mtime_ns
             plm_file.name = obj.Name
@@ -1890,23 +2330,53 @@ class TaackPlmTaskPanel(object):
             plm_file.fileName = obj.FileName
             plm_file.createdDate = obj.CreationDate
             plm_file.createdBy = obj.CreatedBy
-            plm_file.sha1hex = self.compute_file_shaOne(obj.FileName)
+            plm_file.sha1hex = self.compute_file_shaOne(
+                obj.FileName
+            )
             plm_file.lastModifiedDate = obj.LastModifiedDate
             plm_file.lastModifiedBy = obj.LastModifiedBy
+
             linked_objects = iter(obj.Objects)
+
             for l in linked_objects:
-                if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
-                    lp = self.create_link_protobuf(l, bucket)
+
+                if type(l) == FreeCAD.DocumentObject and \
+                        l.TypeId == 'App::Link':
+
+                    lp = self.create_link_protobuf(
+                        l,
+                        bucket,
+                        allowed_documents
+                    )
+
                     if lp is not None:
                         plm_file.externalLink.append(lp)
 
-            # plm_file.fileContent = open(obj.FileName, 'rb').read()
-            plm_file.filePreview = self.create_thumbnail(obj.FileName)
-            bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
-            self.shaOneMap[plm_file.sha1hex] = obj.FileName
+            plm_file.filePreview = self.create_thumbnail(
+                obj.FileName
+            )
 
-        except:
-            raise ValueError("Select the file you waant to upload in the tree")
+            bucket.plmFiles[
+                plm_file.name
+            ].CopyFrom(plm_file)
+
+            self.shaOneMap[
+                plm_file.sha1hex
+            ] = obj.FileName
+
+        except Exception as e:
+
+            print(
+                "createDocProtobuf Error: " +
+                str(e)
+            )
+
+            raise ValueError(
+                "Unable to create protobuf for " +
+                obj.Label +
+                ": " +
+                str(e)
+            )
 
         return obj.Name
 
@@ -1972,14 +2442,40 @@ class TaackPlmTaskPanel(object):
 
         return current_mtime > int(previous_mtime)
 
-    def create_link_protobuf(self, obj, bucket):
+
+    def create_link_protobuf(
+            self,
+            obj,
+            bucket,
+            allowed_documents):
         print("createLinkProtobuf " + obj.Name)
 
         try:
+
             if obj.TypeId != "App::Link":
                 return None
 
             if obj.LinkedObject is None:
+                return None
+
+            linked_doc = obj.LinkedObject.Document
+
+            if linked_doc is None:
+                return None
+
+            # -----------------------------------------------------
+            # IMPORTANT:
+            # Do not recursively upload a linked document unless
+            # it is actually in the Check In list.
+            # -----------------------------------------------------
+            if linked_doc.Name not in allowed_documents:
+                print(
+                    "SKIPPING LINK NOT IN CHECK IN LIST: " +
+                    linked_doc.Name +
+                    " / " +
+                    linked_doc.Label
+                )
+
                 return None
 
             plm_link = PlmBuf.PlmLink()
@@ -1988,34 +2484,57 @@ class TaackPlmTaskPanel(object):
             plm_link.linkClaimChild = obj.LinkClaimChild
 
             if obj.LinkCopyOnChange == 'Disabled':
-                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
+
+                plm_link.linkCopyOnChange = (
+                    PlmBuf.PlmLink.LinkCopyOnChangeEnum.Disabled
+                )
 
             elif obj.LinkCopyOnChange == 'Enabled':
-                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
+
+                plm_link.linkCopyOnChange = (
+                    PlmBuf.PlmLink.LinkCopyOnChangeEnum.Enabled
+                )
 
             elif obj.LinkCopyOnChange == 'Owned':
-                plm_link.linkCopyOnChange = PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
+
+                plm_link.linkCopyOnChange = (
+                    PlmBuf.PlmLink.LinkCopyOnChangeEnum.Owned
+                )
 
             plm_link.linkTransform = obj.LinkTransform
 
-            linked_doc = obj.LinkedObject.Document
+            # -----------------------------------------------------
+            # Recursively create the linked document, but only if
+            # it is part of the Check In list.
+            # -----------------------------------------------------
+            f = self.create_doc_protobuf(
+                linked_doc,
+                bucket,
+                allowed_documents
+            )
 
-            if linked_doc is None:
-                return None
-
-            f = self.create_doc_protobuf(linked_doc, bucket)
             if f is None:
                 return None
 
             plm_link.plmFile = f
-            bucket.links[linked_doc.Name].CopyFrom(plm_link)
+
+            bucket.links[
+                linked_doc.Name
+            ].CopyFrom(plm_link)
+
+            return linked_doc.Name
 
         except Exception as e:
-            print("createLinkProtobuf Error: " + str(e))
-            raise ValueError("createLinkProtobuf Error: " + str(e))
 
-        return linked_doc.Name
-        
+            print(
+                "createLinkProtobuf Error: " +
+                str(e)
+            )
+
+            raise ValueError(
+                "createLinkProtobuf Error: " +
+                str(e)
+            )
     def get_server_info(self):
         try:
             url = self.po.url + 'plmJson/serverInfo'
