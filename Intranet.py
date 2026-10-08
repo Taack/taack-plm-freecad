@@ -52,10 +52,10 @@ class CommandTaackPlm:
     def IsActive(self):
         """Here you can define if the command must be active or not (greyed) if certain conditions
         are met or not. This function is optional."""
-        # if FreeCAD.activeDocument():
+        #if FreeCAD.activeDocument():
         #     return True
-        # else:
-        #     return False
+        #else:
+        #    return False
         return True
 
     def Activated(self):
@@ -635,24 +635,31 @@ class TaackPlmTaskPanel(object):
         self.fork_children(FreeCAD.ActiveDocument)
         # self.form.forkButton.setEnabled(False)
 
+
+    def _new_id_after_fork(self, part):
+        if not part.Id.endswith(str(self.uuidVersion)):
+            part.Id = (part.Id if part.Id else part.Uid) + '-' + part.Label + '/' + str(self.uuidVersion)
+
     def fork_children(self, part):
         print("Forking ... " + str(part))
         if part.Label in self.docLabelsForked:
             return None
         if (part.isTouched() and self.form.forkTouched.isChecked()) or self.form.forkActive.isChecked() or self.form.forkAll.isChecked():
             print("part.isTouched(): " + str(part.isTouched()))
-            if not part.Id.endswith(str(self.uuidVersion)):
-                part.Id = (part.Id if part.Id else part.Uid) + '/' + str(self.uuidVersion)
+            self._new_id_after_fork(part)
         self.docLabelsForked.append(part.Label)
         if self.form.forkTouched.isChecked() or self.form.forkAll.isChecked():
             linked_objects = iter(part.Objects)
             for l in linked_objects:
                 if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
-                    if self.form.forkAll.isChecked() or l.LinkedObject.Document.isTouched():
-                        print("l.LinkedObject.Document.isTouched(): " + str(l.LinkedObject.Document.isTouched()))
-                        if not l.LinkedObject.Document.Id.endswith(str(self.uuidVersion)):
-                            l.LinkedObject.Document.Id = (l.LinkedObject.Document.Id if l.LinkedObject.Document.Id else l.LinkedObject.Document.Uid) + '/' + str(self.uuidVersion)
-                        self.fork_children(l.LinkedObject.Document)
+                    linked_object = l.LinkedObject
+                    if type(l.LinkedObject) is tuple:
+                        linked_object = l.LinkedObject[0]
+                    if linked_object is not None and linked_object.Document is not None:
+                        if self.form.forkAll.isChecked() or linked_object.Document.isTouched():
+                            print("l.LinkedObject.Document.isTouched(): " + str(linked_object.Document.isTouched()))
+                            self._new_id_after_fork(linked_object.Document)
+                            self.fork_children(linked_object.Document)
         return None
 
 
