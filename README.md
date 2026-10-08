@@ -1,6 +1,10 @@
 # Taack PLM workbench for FreeCAD
 
-WARNING: This version only works with PLM release 2026.10.07 !
+WARNING1: This version only works with PLM release 2026.10.08 !
+
+WARNING2: You cannot upload files with the same `Id`. If you tend to replicate the same file, and use links on those files, you will have an error. You have to click on `Duplicate All Parts` in order to recreate a unique `Id` per file.
+
+
 
 This workbench contains tools to interact with Taack Plm Intranet server app you can find under the https://github.com/Taack/plm
 
