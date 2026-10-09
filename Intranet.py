@@ -1,18 +1,15 @@
-import FreeCAD
-import json
-import os
-import re
-import requests
-import time
-import zipfile
-import math
-import uuid
-import time
-import time
-import tempfile
 import hashlib
-from PySide import QtCore, QtGui
+import locale
+import os
+import tempfile
+import time
+import uuid
+import zipfile
 from io import BytesIO
+
+import FreeCAD
+import requests
+from PySide import QtCore, QtGui
 
 import freecad_plm_pb2 as PlmBuf
 
@@ -560,7 +557,9 @@ class TaackPlmTaskPanel(object):
             progress = 10
             self.form.uploadProgress.setValue(progress)
 
-        data = {"ajax": 'true'}
+        lang = locale.getdefaultlocale()[0][:2]
+        lang = lang if lang in ['en', 'fr', 'es'] else 'en'
+        data = {"ajax": 'true', "lang": lang}
         file_tmp_zip_proto = open(tmp_zip_proto, 'rb')
         try:
             r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto',
@@ -604,7 +603,7 @@ class TaackPlmTaskPanel(object):
                             resp_bucket.ParseFromString(resp_bytes)
                             if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
                                 FreeCAD.Console.PrintWarning(
-                                    translate("TaackPlm", "Problem uploading zip with files.") + "\n")
+                                    translate("TaackPlm", resp_bucket.uploadError) + "\n")
                                 return None
                         except Exception as ex:
                             FreeCAD.Console.PrintWarning(
@@ -619,7 +618,7 @@ class TaackPlmTaskPanel(object):
                 self.form.uploadButton.setText("Upload")
                 self.form.uploadProgress.setFormat("Part Uploaded")
             else:
-                FreeCAD.Console.PrintWarning(translate("TaackPlm", "Message not successfully sent ... ") + "\n")
+                FreeCAD.Console.PrintWarning(translate("TaackPlm", resp_bucket.uploadError) + "\n")
                 self.form.uploadProgress.setValue(0)
                 self.form.uploadButton.setEnabled(True)
                 self.form.uploadButton.setText("Upload")

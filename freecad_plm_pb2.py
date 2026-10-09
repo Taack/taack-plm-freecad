@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n(app/plm/src/main/proto/freecad_plm.proto\x12\x0bplm.freecad\"\xb3\x02\n\x07PlmFile\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x0c \x01(\t\x12\x10\n\x08\x66ileName\x18\x02 \x01(\t\x12\r\n\x05label\x18\x03 \x01(\t\x12\x16\n\x0elastModifiedBy\x18\x04 \x01(\t\x12\x18\n\x10lastModifiedDate\x18\x05 \x01(\t\x12\x0f\n\x07\x63omment\x18\x06 \x01(\t\x12\x0f\n\x07\x63ompany\x18\x07 \x01(\t\x12\x11\n\tcreatedBy\x18\x08 \x01(\t\x12\x13\n\x0b\x63reatedDate\x18\t \x01(\t\x12\x14\n\x0c\x65xternalLink\x18\n \x03(\t\x12\x13\n\x0b\x66ileContent\x18\x0b \x01(\x0c\x12\x0f\n\x07\x63TimeNs\x18\r \x01(\x03\x12\x0f\n\x07uTimeNs\x18\x0e \x01(\x03\x12\x0f\n\x07sha1hex\x18\x0f \x01(\t\x12\x13\n\x0b\x66ilePreview\x18\x10 \x01(\x0c\"\xf1\x01\n\x07PlmLink\x12\x14\n\x0clinkedObject\x18\x01 \x01(\t\x12\x16\n\x0elinkClaimChild\x18\x02 \x01(\x08\x12\x15\n\rlinkTransform\x18\x03 \x01(\x08\x12\x43\n\x10linkCopyOnChange\x18\x04 \x01(\x0e\x32).plm.freecad.PlmLink.LinkCopyOnChangeEnum\x12\r\n\x05scale\x18\x05 \x01(\x01\x12\x0f\n\x07plmFile\x18\x06 \x01(\t\"<\n\x14LinkCopyOnChangeEnum\x12\x0c\n\x08\x44isabled\x10\x00\x12\x0b\n\x07\x45nabled\x10\x01\x12\t\n\x05Owned\x10\x02\"\xbb\x02\n\x06\x42ucket\x12\x33\n\x08plmFiles\x18\x01 \x03(\x0b\x32!.plm.freecad.Bucket.PlmFilesEntry\x12-\n\x05links\x18\x02 \x03(\x0b\x32\x1e.plm.freecad.Bucket.LinksEntry\x12\x17\n\x0fserverSha1Files\x18\x03 \x03(\t\x12)\n\x06status\x18\x04 \x01(\x0e\x32\x19.plm.freecad.ServerStatus\x1a\x45\n\rPlmFilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.plm.freecad.PlmFile:\x02\x38\x01\x1a\x42\n\nLinksEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.plm.freecad.PlmLink:\x02\x38\x01*H\n\x0cServerStatus\x12\x0c\n\x08OK_PROTO\x10\x00\x12\r\n\tNOK_PROTO\x10\x01\x12\x0c\n\x08OK_FILES\x10\x02\x12\r\n\tNOK_FILES\x10\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n(app/plm/src/main/proto/freecad_plm.proto\x12\x0bplm.freecad\"\xb3\x02\n\x07PlmFile\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x0c \x01(\t\x12\x10\n\x08\x66ileName\x18\x02 \x01(\t\x12\r\n\x05label\x18\x03 \x01(\t\x12\x16\n\x0elastModifiedBy\x18\x04 \x01(\t\x12\x18\n\x10lastModifiedDate\x18\x05 \x01(\t\x12\x0f\n\x07\x63omment\x18\x06 \x01(\t\x12\x0f\n\x07\x63ompany\x18\x07 \x01(\t\x12\x11\n\tcreatedBy\x18\x08 \x01(\t\x12\x13\n\x0b\x63reatedDate\x18\t \x01(\t\x12\x14\n\x0c\x65xternalLink\x18\n \x03(\t\x12\x13\n\x0b\x66ileContent\x18\x0b \x01(\x0c\x12\x0f\n\x07\x63TimeNs\x18\r \x01(\x03\x12\x0f\n\x07uTimeNs\x18\x0e \x01(\x03\x12\x0f\n\x07sha1hex\x18\x0f \x01(\t\x12\x13\n\x0b\x66ilePreview\x18\x10 \x01(\x0c\"\xf1\x01\n\x07PlmLink\x12\x14\n\x0clinkedObject\x18\x01 \x01(\t\x12\x16\n\x0elinkClaimChild\x18\x02 \x01(\x08\x12\x15\n\rlinkTransform\x18\x03 \x01(\x08\x12\x43\n\x10linkCopyOnChange\x18\x04 \x01(\x0e\x32).plm.freecad.PlmLink.LinkCopyOnChangeEnum\x12\r\n\x05scale\x18\x05 \x01(\x01\x12\x0f\n\x07plmFile\x18\x06 \x01(\t\"<\n\x14LinkCopyOnChangeEnum\x12\x0c\n\x08\x44isabled\x10\x00\x12\x0b\n\x07\x45nabled\x10\x01\x12\t\n\x05Owned\x10\x02\"\xd0\x02\n\x06\x42ucket\x12\x33\n\x08plmFiles\x18\x01 \x03(\x0b\x32!.plm.freecad.Bucket.PlmFilesEntry\x12-\n\x05links\x18\x02 \x03(\x0b\x32\x1e.plm.freecad.Bucket.LinksEntry\x12\x17\n\x0fserverSha1Files\x18\x03 \x03(\t\x12)\n\x06status\x18\x04 \x01(\x0e\x32\x19.plm.freecad.ServerStatus\x12\x13\n\x0buploadError\x18\x05 \x01(\t\x1a\x45\n\rPlmFilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.plm.freecad.PlmFile:\x02\x38\x01\x1a\x42\n\nLinksEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12#\n\x05value\x18\x02 \x01(\x0b\x32\x14.plm.freecad.PlmLink:\x02\x38\x01*H\n\x0cServerStatus\x12\x0c\n\x08OK_PROTO\x10\x00\x12\r\n\tNOK_PROTO\x10\x01\x12\x0c\n\x08OK_FILES\x10\x02\x12\r\n\tNOK_FILES\x10\x03\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -35,8 +35,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_BUCKET_PLMFILESENTRY']._serialized_options = b'8\001'
   _globals['_BUCKET_LINKSENTRY']._loaded_options = None
   _globals['_BUCKET_LINKSENTRY']._serialized_options = b'8\001'
-  _globals['_SERVERSTATUS']._serialized_start=929
-  _globals['_SERVERSTATUS']._serialized_end=1001
+  _globals['_SERVERSTATUS']._serialized_start=950
+  _globals['_SERVERSTATUS']._serialized_end=1022
   _globals['_PLMFILE']._serialized_start=58
   _globals['_PLMFILE']._serialized_end=365
   _globals['_PLMLINK']._serialized_start=368
@@ -44,9 +44,9 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PLMLINK_LINKCOPYONCHANGEENUM']._serialized_start=549
   _globals['_PLMLINK_LINKCOPYONCHANGEENUM']._serialized_end=609
   _globals['_BUCKET']._serialized_start=612
-  _globals['_BUCKET']._serialized_end=927
-  _globals['_BUCKET_PLMFILESENTRY']._serialized_start=790
-  _globals['_BUCKET_PLMFILESENTRY']._serialized_end=859
-  _globals['_BUCKET_LINKSENTRY']._serialized_start=861
-  _globals['_BUCKET_LINKSENTRY']._serialized_end=927
+  _globals['_BUCKET']._serialized_end=948
+  _globals['_BUCKET_PLMFILESENTRY']._serialized_start=811
+  _globals['_BUCKET_PLMFILESENTRY']._serialized_end=880
+  _globals['_BUCKET_LINKSENTRY']._serialized_start=882
+  _globals['_BUCKET_LINKSENTRY']._serialized_end=948
 # @@protoc_insertion_point(module_scope)
