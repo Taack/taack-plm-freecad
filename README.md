@@ -1,6 +1,6 @@
 # Taack PLM workbench for FreeCAD
 
-WARNING1: This version only works with PLM release 2026.10.08 !
+WARNING1: This version only works with PLM release 2026.10.09 !
 
 WARNING2: You cannot upload files with the same `Id`. If you tend to replicate the same file, and use links on those files, you will have an error. You have to click on `Duplicate All Parts` in order to recreate a unique `Id` per file.
 
@@ -63,7 +63,8 @@ All linked files will be uploaded. There are 3 situations from here, for each fi
 ![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-search-part.webp)
 
 1. Search part tab
-2. Top Assemblies
+2. New Table Result
+3. Model Preview
 
 ### Duplicate Options
 
