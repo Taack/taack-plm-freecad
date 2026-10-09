@@ -94,7 +94,8 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         self.form.modelTable.setColumnCount(5)
         self.form.modelTable.verticalHeader().setVisible(False)
-        self.form.modelTable.itemClicked.connect(self.open_in_freecad)
+        # self.form.modelTable.itemClicked.connect(self.open_in_freecad)
+        self.form.modelTable.itemClicked.connect(self._open_webview)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
         QtCore.QObject.connect(self.form.forkButton, QtCore.SIGNAL("pressed()"), self.fork)
@@ -141,12 +142,59 @@ class TaackPlmTaskPanel(object):
     def save_preferences(self):
         self.po.user = self.form.userEdit.text()
         self.po.settings.setValue("username", self.po.user)
-        self.po.url = self.form.urlEdit.text()
+        self.po.url = self.form.urlEdit.text().strip()
+        if not self.po.url.endswith("/"):
+            self.po.url += "/"
+
         self.po.settings.setValue("url", self.po.url)
 
     def accept(self):
         print("Closing Taack PLM panel")
         FreeCADGui.Control.closeDialog()
+
+    def _open_webview(self):
+        item = self.form.modelTable.currentItem()
+
+        if item is None:
+            raise ValueError("Select a part to add to the workspace.")
+        part = item.data(QtCore.Qt.UserRole)
+        part_id = part.get("id")
+
+        r = self.po.taackIntranetSession.post(url=self.po.url + 'plm/showPartInline', params={"id": part_id},
+                                              timeout=120)
+        # https://github.com/Taack/infra/issues/61
+        from Intranet_details_webview import TaackPlmDetailsWebview
+        header = """
+<html lang="null" data-bs-theme-auto="auto" data-bs-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <script src="/assets/application-taack.js"></script>
+        <title>Taack</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/assets/application-taack.css">
+
+    <style>
+    .navbar-nav > li > .dropdown-menu {
+        background-color: #05294c;
+        z-index: 9999;
+    }
+
+    body > nav .navbar-nav a.nav-link {
+        color: #eeeeee;
+    }
+    </style>
+
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
+</head><body>"""
+        footer = """</body></html>"""
+        text = header + r.text + footer
+        dialogue = TaackPlmDetailsWebview(text, self.po.url)
+        dialogue.exec_()
+        if dialogue.hasApplied:
+            self.open_in_freecad()
+        else:
+            print("Nope")
 
     def add_to_workspace(self):
         global message_label
@@ -176,25 +224,13 @@ class TaackPlmTaskPanel(object):
             # Try to determine the original FreeCAD filename
             # ---------------------------------------------------------
             expected_name = part.get("pathOnHost")
-
-            # ---------------------------------------------------------
-            # If the part is already in the workspace, don't download it
-            # ---------------------------------------------------------
             if expected_name:
                 expected_name = os.path.basename(str(expected_name))
 
                 if not expected_name.lower().endswith(".fcstd"):
                     expected_name += ".FCStd"
 
-            # ---------------------------------------------------------
-            # Build download URL
-            # ---------------------------------------------------------
-            base_url = self.form.urlEdit.text().strip()
-
-            if not base_url.endswith("/"):
-                base_url += "/"
-
-            url = base_url + "plm/downloadBinPart"
+            url = self.po.url + "plm/downloadBinPart"
 
             message_label.setText("Downloading part...")
 
@@ -388,12 +424,7 @@ class TaackPlmTaskPanel(object):
             return
 
         try:
-            base_url = self.form.urlEdit.text().strip()
-
-            if not base_url.endswith("/"):
-                base_url += "/"
-
-            url = base_url + "plmJson/queryModel"
+            url = self.po.url + "plmJson/queryModel"
 
             response = self.po.taackIntranetSession.get(
                 url,
@@ -467,7 +498,7 @@ class TaackPlmTaskPanel(object):
 
     def logout_intranet(self):
         print('logout Intranet ...')
-        self.po.taackIntranetSession.get(url=self.form.urlEdit.text() + 'logout', timeout=5)
+        self.po.taackIntranetSession.get(url=self.po.url + 'logout', timeout=5)
         self.form.connectButton.setStyleSheet('QPushButton {color: black;}')
         self.form.connectButton.setEnabled(True)
         self.form.connectButton.setText('Connect')
@@ -477,12 +508,14 @@ class TaackPlmTaskPanel(object):
         data = {"username": self.form.userEdit.text(), "password": self.form.passEdit.text(), "ajax": 'true'}
         self.save_preferences()
         try:
-            r = self.po.taackIntranetSession.post(url=self.form.urlEdit.text() + 'login/authenticate', data=data,
+            r = self.po.taackIntranetSession.post(url=self.po.url + 'login/authenticate', data=data,
                                                   timeout=5)
             if r.json()["success"] == True:
                 self.po.connected = True
                 self.po.user = self.form.userEdit.text()
-                self.po.url = self.form.urlEdit.text()
+                self.po.url = self.form.urlEdit.text().strip()
+                if not self.po.url.endswith("/"):
+                    self.po.url += "/"
                 self.po.passwd = self.form.passEdit.text()
                 self.form.connectButton.setStyleSheet('QPushButton {color: green;}')
                 self.form.connectButton.setEnabled(False)
@@ -495,7 +528,6 @@ class TaackPlmTaskPanel(object):
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Can't connect to the intranet.") + "\n")
 
     def upload_current_active_doc(self):
-
         self.form.uploadProgress.setValue(0)
         self.form.uploadButton.setEnabled(False)
         self.form.uploadButton.setText("Uploading...")
