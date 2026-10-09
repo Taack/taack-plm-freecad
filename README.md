@@ -60,7 +60,7 @@ All linked files will be uploaded. There are 3 situations from here, for each fi
 
 ### Search And Download Model from the Server
 
-![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-search-part.webp)
+![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-search-part2.webp)
 
 1. Search part tab
 2. New Table Result
