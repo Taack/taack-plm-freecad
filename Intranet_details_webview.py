@@ -21,11 +21,11 @@ class TaackPlmDetailsWebview(QtWidgets.QDialog):
         layout.addWidget(self.btnApplyCheckIn)
         layout.addWidget(self.btnApplyDlRO)
         self.btnApplyCheckIn.clicked.connect(self.checkIn)
-        self.btnApplyDlRO.clicked.connect(self.downloadReadOnly())
+        self.btnApplyDlRO.clicked.connect(self.downloadReadOnly)
         self.btnClose.clicked.connect(self.closing)
         self.webview.setHtml(html, base_url)
-        if (ro):
-            btnCheckIn.setEnabled(False)
+        if ro:
+            self.btnApplyCheckIn.setEnabled(False)
         self.webview.show()
 
     def checkIn(self):

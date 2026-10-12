@@ -187,14 +187,11 @@ class TaackPlmTaskPanel(object):
         footer = """</body></html>"""
         text = header + r.text + footer
         if r.text.startswith("<!-- read-only -->"):
-            dialogue = TaackPlmDetailsWebview(text, True, self.po.url)
+            dialogue = TaackPlmDetailsWebview(True, text, self.po.url)
         else:
-            dialogue = TaackPlmDetails(text, False, self.po.url)
+            dialogue = TaackPlmDetailsWebview(False, text, self.po.url)
         dialogue.exec_()
-        if dialogue.hasApplied:
-            self.open_in_freecad(dialogue.isCheckIn)
-        else:
-            print("Nope")
+        self.open_in_freecad(dialogue.isCheckIn)
 
     def add_to_workspace(self):
         global message_label
@@ -354,11 +351,13 @@ class TaackPlmTaskPanel(object):
 
 
     def set_ro(self):
+        print("set_ro !!!")
         doc = FreeCAD.ActiveDocument
         doc.Id = 'READ_ONLY'
 
 
     def open_in_freecad(self, is_check_in):
+        print('PLM: open_in_freecad ' + str(is_check_in))
         try:
             if self.form.modelTable.currentItem() is None:
                 self.form.searchPartMessageLabel.setText("Please select a part first.")
@@ -379,7 +378,7 @@ class TaackPlmTaskPanel(object):
             FreeCAD.openDocument(freecad_file)
 
             if not is_check_in:
-                slef.set_ro()
+                self.set_ro()
 
             if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
                 self.form.searchPartMessageLabel.setText(
