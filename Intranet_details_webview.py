@@ -3,8 +3,9 @@ from PySide6 import QtWidgets
 from PySide6.QtWebEngineWidgets import QWebEngineView
 
 class TaackPlmDetailsWebview(QtWidgets.QDialog):
-    def __init__(self, html, base_url):
+    def __init__(self, ro, html, base_url):
         self.hasApplied = False
+        self.isCheckIn = False
         super().__init__(FreeCADGui.getMainWindow())
         # self.window = QtWidgets.QDialog()
         self.window = self
@@ -12,18 +13,30 @@ class TaackPlmDetailsWebview(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(self.window)
         self.webview = QWebEngineView(self.window)
         self.btnClose = QtWidgets.QPushButton("Close")
-        self.btnApply = QtWidgets.QPushButton("Apply")
+        self.btnApplyCheckIn = QtWidgets.QPushButton("CheckIn")
+        self.btnApplyDlRO = QtWidgets.QPushButton("Download Read-Only")
         # self.btn.clicked.connect(self.accept)
         layout.addWidget(self.webview)
         layout.addWidget(self.btnClose)
-        layout.addWidget(self.btnApply)
-        self.btnApply.clicked.connect(self.accept)
+        layout.addWidget(self.btnApplyCheckIn)
+        layout.addWidget(self.btnApplyDlRO)
+        self.btnApplyCheckIn.clicked.connect(self.checkIn)
+        self.btnApplyDlRO.clicked.connect(self.downloadReadOnly)
         self.btnClose.clicked.connect(self.closing)
         self.webview.setHtml(html, base_url)
+        if ro:
+            self.btnApplyCheckIn.setEnabled(False)
         self.webview.show()
 
-    def accept(self):
+    def checkIn(self):
         self.hasApplied = True
+        self.isCheckIn = True
+        self.webview.hide()
+        self.close()
+
+    def downloadReadOnly(self):
+        self.hasApplied = True
+        self.isCheckIn = False
         self.webview.hide()
         self.close()
 
