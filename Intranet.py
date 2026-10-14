@@ -193,14 +193,9 @@ class TaackPlmTaskPanel(object):
         dialogue.exec_()
         self.open_in_freecad(dialogue.isCheckIn)
 
-    def add_to_workspace(self):
+    def add_to_workspace(self, part):
         global message_label
         try:
-            item = self.form.modelTable.currentItem()
-
-            if item is None:
-                raise ValueError("Select a part to add to the workspace.")
-            part = item.data(QtCore.Qt.UserRole)
             part_id = part.get("id")
             message_label = self.form.searchPartMessageLabel
 
@@ -362,9 +357,14 @@ class TaackPlmTaskPanel(object):
             if self.form.modelTable.currentItem() is None:
                 self.form.searchPartMessageLabel.setText("Please select a part first.")
                 return
+            item = self.form.modelTable.currentItem()
+
+            if item is None:
+                raise ValueError("Select a part to add to the workspace.")
+            part = item.data(QtCore.Qt.UserRole)
 
             # Use the same download/workspace function
-            freecad_file = self.add_to_workspace()
+            freecad_file = self.add_to_workspace(part)
 
             if not freecad_file:
                 return
@@ -374,6 +374,11 @@ class TaackPlmTaskPanel(object):
                     "The downloaded FreeCAD file does not exist:\n" +
                     freecad_file
                 )
+
+            try:
+                FreeCAD.closeDocument(part.get('label'))
+            except Exception as e:
+                print("Cannot close " + part.get('label') + ", " + str(e))
 
             FreeCAD.openDocument(freecad_file)
 
