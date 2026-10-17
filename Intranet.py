@@ -191,9 +191,10 @@ class TaackPlmTaskPanel(object):
         else:
             dialogue = TaackPlmDetailsWebview(False, text, self.po.url)
         dialogue.exec_()
-        self.open_in_freecad(dialogue.isCheckIn)
+        if (dialogue.hasApplied):
+            self.open_in_freecad(dialogue.hasCheckIn)
 
-    def add_to_workspace(self, part):
+    def add_to_workspace(self, part, is_check_in):
         global message_label
         try:
             part_id = part.get("id")
@@ -239,8 +240,8 @@ class TaackPlmTaskPanel(object):
             # ---------------------------------------------------------
             response = self.po.taackIntranetSession.get(
                 url,
-                params={"id": part_id},
-                timeout=120
+                params={"id": part_id, "lockIt": 'false' if not is_check_in else 'true'},
+                timeout=50
             )
 
             response.raise_for_status()
@@ -364,7 +365,7 @@ class TaackPlmTaskPanel(object):
             part = item.data(QtCore.Qt.UserRole)
 
             # Use the same download/workspace function
-            freecad_file = self.add_to_workspace(part)
+            freecad_file = self.add_to_workspace(part, is_check_in)
 
             if not freecad_file:
                 return
