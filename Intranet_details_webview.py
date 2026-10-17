@@ -1,11 +1,11 @@
 import FreeCADGui
-from PySide6 import QtWidgets
-from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide import QtWidgets
+from PySide.QtWebEngineWidgets import QWebEngineView
 
 class TaackPlmDetailsWebview(QtWidgets.QDialog):
     def __init__(self, ro, html, base_url):
         self.hasApplied = False
-        self.isCheckIn = False
+        self.hasCheckIn = False
         super().__init__(FreeCADGui.getMainWindow())
         # self.window = QtWidgets.QDialog()
         self.window = self
@@ -30,17 +30,18 @@ class TaackPlmDetailsWebview(QtWidgets.QDialog):
 
     def checkIn(self):
         self.hasApplied = True
-        self.isCheckIn = True
+        self.hasCheckIn = True
         self.webview.hide()
         self.close()
 
     def downloadReadOnly(self):
         self.hasApplied = True
-        self.isCheckIn = False
+        self.hasCheckIn = False
         self.webview.hide()
         self.close()
 
     def closing(self):
         self.hasApplied = False
+        self.hasCheckIn = False
         self.webview.hide()
         self.close()
