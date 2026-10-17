@@ -1,6 +1,10 @@
 import FreeCADGui
 from PySide import QtWidgets
-from PySide.QtWebEngineWidgets import QWebEngineView
+try:
+    from PySide.QtWebEngineWidgets import QWebEngineView
+except:
+    QWebEngineView = None
+
 
 class TaackPlmDetailsWebview(QtWidgets.QDialog):
     def __init__(self, ro, html, base_url):
@@ -11,37 +15,44 @@ class TaackPlmDetailsWebview(QtWidgets.QDialog):
         self.window = self
         self.window.resize(720, 640)
         layout = QtWidgets.QVBoxLayout(self.window)
-        self.webview = QWebEngineView(self.window)
+        if QWebEngineView is not None:
+            self.webview = QWebEngineView(self.window)
         self.btnClose = QtWidgets.QPushButton("Close")
         self.btnApplyCheckIn = QtWidgets.QPushButton("CheckIn")
         self.btnApplyDlRO = QtWidgets.QPushButton("Download Read-Only")
         # self.btn.clicked.connect(self.accept)
-        layout.addWidget(self.webview)
+        if QWebEngineView is not None:
+            layout.addWidget(self.webview)
         layout.addWidget(self.btnClose)
         layout.addWidget(self.btnApplyCheckIn)
         layout.addWidget(self.btnApplyDlRO)
         self.btnApplyCheckIn.clicked.connect(self.checkIn)
         self.btnApplyDlRO.clicked.connect(self.downloadReadOnly)
         self.btnClose.clicked.connect(self.closing)
-        self.webview.setHtml(html, base_url)
+        if QWebEngineView is not None:
+            self.webview.setHtml(html, base_url)
         if ro:
             self.btnApplyCheckIn.setEnabled(False)
-        self.webview.show()
+        if QWebEngineView is not None:
+            self.webview.show()
 
     def checkIn(self):
         self.hasApplied = True
         self.hasCheckIn = True
-        self.webview.hide()
+        if QWebEngineView is not None:
+            self.webview.hide()
         self.close()
 
     def downloadReadOnly(self):
         self.hasApplied = True
         self.hasCheckIn = False
-        self.webview.hide()
+        if QWebEngineView is not None:
+            self.webview.hide()
         self.close()
 
     def closing(self):
         self.hasApplied = False
         self.hasCheckIn = False
-        self.webview.hide()
+        if QWebEngineView is not None:
+            self.webview.hide()
         self.close()
