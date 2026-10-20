@@ -160,7 +160,8 @@ class TaackPlmTaskPanel(object):
         r = self.po.taackIntranetSession.post(url=self.po.url + 'plm/showPartInline', params={"id": part_id},
                                               timeout=120)
         # https://github.com/Taack/infra/issues/61
-        from Intranet_details_webview import TaackPlmDetailsWebview
+        # from Intranet_details_webview import TaackPlmDetailsWebview
+        from Intranet_details_nowebview import TaackPlmDetailsNoWebview
         header = """
 <html lang="null" data-bs-theme-auto="auto" data-bs-theme="light">
 <head>
@@ -187,9 +188,10 @@ class TaackPlmTaskPanel(object):
         footer = """</body></html>"""
         text = header + r.text + footer
         if r.text.startswith("<!-- read-only -->"):
-            dialogue = TaackPlmDetailsWebview(True, text, self.po.url)
+            dialogue = TaackPlmDetailsNoWebview(True, text, self.po.url)
         else:
-            dialogue = TaackPlmDetailsWebview(False, text, self.po.url)
+            dialogue = TaackPlmDetailsNoWebview(False, text, self.po.url)
+        dialogue.show()
         dialogue.exec_()
         if (dialogue.hasApplied):
             self.open_in_freecad(dialogue.hasCheckIn)
@@ -659,7 +661,7 @@ class TaackPlmTaskPanel(object):
 
             # Check whether we have a FreeCAD document
             if "Document.xml" not in files:
-                print(input_file, " doesn't look like a FreeCAD file")
+                print(filename, " doesn't look like a FreeCAD file")
                 return None
 
             # Read thumbnail from file or use default icon
@@ -672,7 +674,7 @@ class TaackPlmTaskPanel(object):
             return image
 
         except Exception:
-            print("Error creating FreeCAD thumbnail for file ", input_file)
+            print("Error creating FreeCAD thumbnail for file ", filename)
 
     def fork(self):
         self.docLabelsForked = []
