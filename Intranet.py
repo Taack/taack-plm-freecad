@@ -6,10 +6,12 @@ import time
 import uuid
 import zipfile
 from io import BytesIO
+from typing import Any
 
 import FreeCAD
 import requests
-from PySide import QtCore, QtGui
+from PySide6 import QtCore, QtGui
+from PySide6.QtWidgets import QTableWidgetItem, QLabel, QApplication
 
 import freecad_plm_pb2 as PlmBuf
 
@@ -59,6 +61,53 @@ class CommandTaackPlm:
         FreeCADGui.Control.showDialog(TaackPlmTaskPanel(self))
 
 
+def accept():
+    print("Closing Taack PLM panel")
+    FreeCADGui.Control.closeDialog()
+
+
+def set_freecad_working_directory(workspace):
+    if not workspace:
+        return
+
+    param = FreeCAD.ParamGet(
+        "User parameter:BaseApp/Preferences/General"
+    )
+
+    param.SetString("WorkingDir", workspace)
+    param.SetString("FileOpenSavePath", workspace)
+
+
+def set_ro():
+    print("set_ro !!!")
+    doc = FreeCAD.ActiveDocument
+    doc.Id = 'READ_ONLY'
+
+
+def create_thumbnail(filename):
+    try:
+        # Read compressed file
+        zfile = zipfile.ZipFile(filename)
+        files = zfile.namelist()
+
+        # Check whether we have a FreeCAD document
+        if "Document.xml" not in files:
+            print(filename, " doesn't look like a FreeCAD file")
+            return None
+
+        # Read thumbnail from file or use default icon
+        image = "thumbnails/Thumbnail.png"
+        if image in files:
+            image = zfile.read(image)
+        else:
+            return None
+
+        return image
+
+    except Exception:
+        print("Error creating FreeCAD thumbnail for file ", filename)
+
+
 class TaackPlmTaskPanel(object):
     '''The TaskPanel for the Taack PLM command'''
 
@@ -82,7 +131,7 @@ class TaackPlmTaskPanel(object):
         workspace = self.po.settings.value("workspace", "")
         if workspace:
             self.form.guiFileChooser.setFileName(workspace)
-            self.set_freecad_working_directory(workspace)
+            set_freecad_working_directory(workspace)
         # Save workspace whenever the user changes it
         QtCore.QObject.connect(self.form.guiFileChooser, QtCore.SIGNAL("fileNameChanged(QString)"), self.save_workspace)
 
@@ -91,7 +140,6 @@ class TaackPlmTaskPanel(object):
         self.form.urlEdit.insert(po.url)
         self.form.modelTable.setColumnCount(5)
         self.form.modelTable.verticalHeader().setVisible(False)
-        # self.form.modelTable.itemClicked.connect(self.open_in_freecad)
         self.form.modelTable.itemClicked.connect(self._open_webview)
         QtCore.QObject.connect(self.form.connectButton, QtCore.SIGNAL("pressed()"), self.login_intranet)
         QtCore.QObject.connect(self.form.disconnectButton, QtCore.SIGNAL("pressed()"), self.logout_intranet)
@@ -107,27 +155,17 @@ class TaackPlmTaskPanel(object):
             self.form.connectButton.setEnabled(False)
             self.form.connectButton.setText('Connected')
 
-    def set_freecad_working_directory(self, workspace):
-        if not workspace:
-            return
-
-        param = FreeCAD.ParamGet(
-            "User parameter:BaseApp/Preferences/General"
-        )
-
-        param.SetString("WorkingDir", workspace)
-        param.SetString("FileOpenSavePath", workspace)
-
     def save_workspace(self, workspace):
         print("save_workspace: " + str(workspace))
         self.po.settings.setValue("workspace", workspace)
         self.po.settings.sync()
         # Make FreeCAD use the PLM workspace as its default directory
-        self.set_freecad_working_directory(workspace)
+        set_freecad_working_directory(workspace)
 
-    def compute_file_shaOne(self, filePath):
+    @staticmethod
+    def compute_file_sha_one(file_path: str):
         sha1 = hashlib.sha1()
-        with open(filePath, 'rb') as f:
+        with open(file_path, 'rb') as f:
             while True:
                 data = f.read(65536)
                 if not data:
@@ -145,62 +183,31 @@ class TaackPlmTaskPanel(object):
 
         self.po.settings.setValue("url", self.po.url)
 
-    def accept(self):
-        print("Closing Taack PLM panel")
-        FreeCADGui.Control.closeDialog()
-
     def _open_webview(self):
-        item = self.form.modelTable.currentItem()
+        item: QTableWidgetItem = self.form.modelTable.currentItem()
 
         if item is None:
             raise ValueError("Select a part to add to the workspace.")
-        part = item.data(QtCore.Qt.UserRole)
+        part: Any = item.data(QtCore.Qt.UserRole)
         part_id = part.get("id")
 
         r = self.po.taackIntranetSession.post(url=self.po.url + 'plm/showPartInline', params={"id": part_id},
                                               timeout=120)
-        # https://github.com/Taack/infra/issues/61
-        # from Intranet_details_webview import TaackPlmDetailsWebview
         from Intranet_details_nowebview import TaackPlmDetailsNoWebview
-        header = """
-<html lang="null" data-bs-theme-auto="auto" data-bs-theme="light">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width">
-    <script src="/assets/application-taack.js"></script>
-        <title>Taack</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/assets/application-taack.css">
 
-    <style>
-    .navbar-nav > li > .dropdown-menu {
-        background-color: #05294c;
-        z-index: 9999;
-    }
-
-    body > nav .navbar-nav a.nav-link {
-        color: #eeeeee;
-    }
-    </style>
-
-    <link rel="icon" type="image/png" href="/assets/favicon.png">
-</head><body>"""
-        footer = """</body></html>"""
-        text = header + r.text + footer
         if r.text.startswith("<!-- read-only -->"):
-            dialogue = TaackPlmDetailsNoWebview(True, text, self.po.url)
+            dialogue = TaackPlmDetailsNoWebview(True, r.text, self.po.url)
         else:
-            dialogue = TaackPlmDetailsNoWebview(False, text, self.po.url)
+            dialogue = TaackPlmDetailsNoWebview(False, r.text, self.po.url)
         dialogue.show()
         dialogue.exec_()
-        if (dialogue.hasApplied):
+        if dialogue.hasApplied:
             self.open_in_freecad(dialogue.hasCheckIn)
 
-    def add_to_workspace(self, part, is_check_in):
-        global message_label
+    def add_to_workspace(self, part: Any, is_check_in: bool):
+        message_label: QLabel = self.form.searchPartMessageLabel
         try:
             part_id = part.get("id")
-            message_label = self.form.searchPartMessageLabel
 
             if not self.po.connected:
                 raise ValueError("Not connected to the PLM server.")
@@ -325,36 +332,18 @@ class TaackPlmTaskPanel(object):
             return freecad_file
 
         except requests.exceptions.RequestException as e:
-
             message = "Download failed: " + str(e)
-            try:
-                message_label.setText(message)
-            except Exception:
-                pass
-
+            message_label.setText(message)
             FreeCAD.Console.PrintError(message + "\n")
-
             return None
 
         except Exception as e:
-
             message = "Error adding part to workspace: " + str(e)
-            try:
-                message_label.setText(message)
-            except Exception:
-                pass
-
+            message_label.setText(message)
             FreeCAD.Console.PrintError(message + "\n")
             return None
 
-
-    def set_ro(self):
-        print("set_ro !!!")
-        doc = FreeCAD.ActiveDocument
-        doc.Id = 'READ_ONLY'
-
-
-    def open_in_freecad(self, is_check_in):
+    def open_in_freecad(self, is_check_in: bool):
         print('PLM: open_in_freecad ' + str(is_check_in))
         try:
             if self.form.modelTable.currentItem() is None:
@@ -364,7 +353,7 @@ class TaackPlmTaskPanel(object):
 
             if item is None:
                 raise ValueError("Select a part to add to the workspace.")
-            part = item.data(QtCore.Qt.UserRole)
+            part: Any = item.data(QtCore.Qt.UserRole)
 
             # Use the same download/workspace function
             freecad_file = self.add_to_workspace(part, is_check_in)
@@ -387,16 +376,12 @@ class TaackPlmTaskPanel(object):
             FreeCAD.openDocument(freecad_file)
 
             if not is_check_in:
-                self.set_ro()
+                set_ro()
 
             if self.form.tabWidget.currentWidget() == self.form.searchPartTab:
-                self.form.searchPartMessageLabel.setText(
-                    "Opened part in FreeCAD."
-                )
+                self.form.searchPartMessageLabel.setText("Opened part in FreeCAD.")
             else:
-                self.form.browseMessageLabel.setText(
-                    "Opened part in FreeCAD."
-                )
+                self.form.browseMessageLabel.setText("Opened part in FreeCAD.")
 
             FreeCAD.Console.PrintMessage(
                 "Opened FreeCAD document: " +
@@ -424,7 +409,6 @@ class TaackPlmTaskPanel(object):
             )
 
     def search_parts(self):
-
         self.form.modelTable.clear()
         self.form.searchPartMessageLabel.clear()
 
@@ -475,23 +459,26 @@ class TaackPlmTaskPanel(object):
 
                 part_id = part.get("id")
 
-                # Prefer originalName for the visible text.
                 part_name = (
                         part.get("originalName") or
                         part.get("label") or
                         str(part_id)
                 )
 
-                item = QtGui.QTableWidgetItem(str(part_name))
+                item = QTableWidgetItem(str(part_name))
                 item.setData(QtCore.Qt.UserRole, part)
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
-                item2 = QtGui.QTableWidgetItem(str(part.get("userCreated")))
+                item2 = QTableWidgetItem(str(part.get("userCreated")))
+                item2.setData(QtCore.Qt.UserRole, part)
                 item2.setFlags(QtCore.Qt.ItemIsEnabled)
-                item3 = QtGui.QTableWidgetItem(str(part.get("status")['name']))
+                item3 = QTableWidgetItem(str(part.get("status")['name']))
+                item3.setData(QtCore.Qt.UserRole, part)
                 item3.setFlags(QtCore.Qt.ItemIsEnabled)
-                item4 = QtGui.QTableWidgetItem(str(part.get("computedVersion")))
+                item4 = QTableWidgetItem(str(part.get("computedVersion")))
+                item4.setData(QtCore.Qt.UserRole, part)
                 item4.setFlags(QtCore.Qt.ItemIsEnabled)
-                item5 = QtGui.QTableWidgetItem(str(part.get("plmFileLastUpdated")))
+                item5 = QTableWidgetItem(str(part.get("plmFileLastUpdated")))
+                item5.setData(QtCore.Qt.UserRole, part)
                 item5.setFlags(QtCore.Qt.ItemIsEnabled)
                 self.form.modelTable.setItem(row_index, 0, item)
                 self.form.modelTable.setItem(row_index, 1, item2)
@@ -557,7 +544,7 @@ class TaackPlmTaskPanel(object):
         self.form.uploadProgress.setRange(0, 100)
         self.form.uploadProgress.setValue(0)
         self.form.uploadProgress.setFormat("Uploading...")
-        QtGui.QApplication.processEvents()
+        QApplication.processEvents()
 
         self.avoidLoop = set()
         self.shaOneMap = dict()
@@ -598,13 +585,13 @@ class TaackPlmTaskPanel(object):
                 else:
                     print("NO KEY:" + serverSha1File + " ... ")
 
-            nbItems = len(self.shaOneMap.items())
-            nb16Interval = nbItems // 16
-            print("nbItems: " + str(nbItems))
-            inc = nbItems // 90
+            nb_items = len(self.shaOneMap.items())
+            nb16_interval = nb_items // 16
+            print("nbItems: " + str(nb_items))
+            inc = nb_items // 90
 
-            if nbItems > 0:
-                for i in range(nb16Interval + 1):
+            if nb_items > 0:
+                for i in range(nb16_interval + 1):
                     tmp_zip_files = os.path.join(tmp_zip_dir.name, 'files' + str(i) + '.zip')
                     with zipfile.ZipFile(tmp_zip_files, 'w') as zip_archive:
 
@@ -650,29 +637,6 @@ class TaackPlmTaskPanel(object):
             self.form.uploadProgress.setFormat("Part Uploaded" if uploaded else "Part NOT Uploaded")
         return None
 
-    def create_thumbnail(self, filename):
-        try:
-            # Read compressed file
-            zfile = zipfile.ZipFile(filename)
-            files = zfile.namelist()
-
-            # Check whether we have a FreeCAD document
-            if "Document.xml" not in files:
-                print(filename, " doesn't look like a FreeCAD file")
-                return None
-
-            # Read thumbnail from file or use default icon
-            image = "thumbnails/Thumbnail.png"
-            if image in files:
-                image = zfile.read(image)
-            else:
-                return None
-
-            return image
-
-        except Exception:
-            print("Error creating FreeCAD thumbnail for file ", filename)
-
     def fork(self):
         self.docLabelsForked = []
         self.uuidVersion = self.uuidVersion if self.uuidVersion else uuid.uuid4()
@@ -680,8 +644,6 @@ class TaackPlmTaskPanel(object):
         print(str(self.form.forkAll))
         print(str(self.form.forkTouched))
         self.fork_children(FreeCAD.ActiveDocument)
-        # self.form.forkButton.setEnabled(False)
-
 
     def _new_id_after_fork(self, part):
         if not part.Id.endswith(str(self.uuidVersion)):
@@ -745,7 +707,7 @@ class TaackPlmTaskPanel(object):
             plm_file.fileName = obj.FileName
             plm_file.createdDate = obj.CreationDate
             plm_file.createdBy = obj.CreatedBy
-            plm_file.sha1hex = self.compute_file_shaOne(obj.FileName)
+            plm_file.sha1hex = self.compute_file_sha_one(obj.FileName)
             plm_file.lastModifiedDate = obj.LastModifiedDate
             plm_file.lastModifiedBy = obj.LastModifiedBy
             linked_objects = iter(obj.Objects)
@@ -756,7 +718,7 @@ class TaackPlmTaskPanel(object):
                         plm_file.externalLink.append(lp)
 
             # plm_file.fileContent = open(obj.FileName, 'rb').read()
-            thumbnail = self.create_thumbnail(obj.FileName)
+            thumbnail = create_thumbnail(obj.FileName)
             if thumbnail is not None:
                 plm_file.filePreview = thumbnail
             bucket.plmFiles[plm_file.name].CopyFrom(plm_file)
