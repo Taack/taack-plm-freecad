@@ -10,7 +10,7 @@ from typing import Any
 
 import FreeCAD
 import requests
-from PySide6 import QtCore, QtGui
+from PySide6 import QtCore
 from PySide6.QtWidgets import QTableWidgetItem, QLabel, QApplication
 
 import freecad_plm_pb2 as PlmBuf
@@ -119,7 +119,7 @@ class TaackPlmTaskPanel(object):
         self.forkMode = 'Active'
         self.po = po
         self.avoidLoop = set()
-        self.form = FreeCADGui.PySideUic.loadUi(os.path.join(os.path.dirname(__file__), 'taack-plm.ui'))
+        self.form = FreeCADGui.PySideUic.loadUi(os.path.join(str(os.path.dirname(__file__)), 'taack-plm.ui'))
 
         # Select the Login tab when we are not connected.
         if not self.po.connected:
