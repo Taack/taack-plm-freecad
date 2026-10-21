@@ -378,10 +378,11 @@ class TaackPlmTaskPanel(object):
                     freecad_file
                 )
 
+            doc_name = part.get('name') or part.get('label')
             try:
-                FreeCAD.closeDocument(part.get('label'))
+                FreeCAD.closeDocument(doc_name)
             except Exception as e:
-                print("Cannot close " + part.get('label') + ", " + str(e))
+                print("Cannot close " + str(doc_name) + ", " + str(e))
 
             FreeCAD.openDocument(freecad_file)
 
@@ -477,7 +478,6 @@ class TaackPlmTaskPanel(object):
                 # Prefer originalName for the visible text.
                 part_name = (
                         part.get("originalName") or
-                        part.get("name") or
                         part.get("label") or
                         str(part_id)
                 )
@@ -579,6 +579,7 @@ class TaackPlmTaskPanel(object):
         lang = locale.getdefaultlocale()[0][:2]
         lang = lang if lang in ['en', 'fr', 'es'] else 'en'
         data = {"ajax": 'true', "lang": lang}
+        uploaded = False
         file_tmp_zip_proto = open(tmp_zip_proto, 'rb')
         try:
             r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadProto',
@@ -586,71 +587,67 @@ class TaackPlmTaskPanel(object):
             resp_bytes = BytesIO(r.content).read()
             resp_bucket = PlmBuf.Bucket()
             resp_bucket.ParseFromString(resp_bytes)
-            if resp_bucket.status == PlmBuf.ServerStatus.OK_PROTO:
-                for serverSha1File in resp_bucket.serverSha1Files:
-                    if serverSha1File in self.shaOneMap:
-                        print("Removing:" + self.shaOneMap.pop(
-                            serverSha1File) + " from files to upload ... " + serverSha1File)
-                    else:
-                        print("NO KEY:" + serverSha1File + " ... ")
-
-                nbItems = len(self.shaOneMap.items())
-                nb16Interval = nbItems // 16
-                print("nbItems: " + str(nbItems))
-                inc = nbItems // 90
-
-                if nbItems > 0:
-                    for i in range(nb16Interval + 1):
-                        tmp_zip_files = os.path.join(tmp_zip_dir.name, 'files' + str(i) + '.zip')
-                        with zipfile.ZipFile(tmp_zip_files, 'w') as zip_archive:
-
-                            print("zip_archive: " + str(zip_archive))
-
-                            for j in range(16):
-                                if len(self.shaOneMap) > 0:
-                                    progress += inc
-                                    self.form.uploadProgress.setValue(progress)
-                                    e_sha_one, filename = self.shaOneMap.popitem()
-                                    zip_archive.write(filename, e_sha_one)
-
-                        file_tmp_zip_files = open(tmp_zip_files, 'rb')
-                        try:
-                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip',
-                                                                  files={'proto.bin': file_tmp_zip_files}, data=data)
-                            resp_bytes = BytesIO(r.content).read()
-                            resp_bucket = PlmBuf.Bucket()
-                            resp_bucket.ParseFromString(resp_bytes)
-                            if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
-                                FreeCAD.Console.PrintWarning(
-                                    translate("TaackPlm", resp_bucket.uploadError) + "\n")
-                                return None
-                        except Exception as ex:
-                            FreeCAD.Console.PrintWarning(
-                                translate("TaackPlm", "Server seems to be disconnected ... ") + str(ex) + "\n")
-                            self.po.connected = False
-                        finally:
-                            file_tmp_zip_files.close()
-                            os.remove(tmp_zip_files)
-                r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/reset', data=data)
-                self.form.uploadProgress.setValue(100)
-                self.form.uploadButton.setEnabled(True)
-                self.form.uploadButton.setText("Upload")
-                self.form.uploadProgress.setFormat("Part Uploaded")
-            else:
+            if resp_bucket.status != PlmBuf.ServerStatus.OK_PROTO:
                 FreeCAD.Console.PrintWarning(translate("TaackPlm", resp_bucket.uploadError) + "\n")
-                self.form.uploadProgress.setValue(0)
-                self.form.uploadButton.setEnabled(True)
-                self.form.uploadButton.setText("Upload")
-                self.form.uploadProgress.setFormat("Part NOT Uploaded")
                 return None
 
+            for serverSha1File in resp_bucket.serverSha1Files:
+                if serverSha1File in self.shaOneMap:
+                    print("Removing:" + self.shaOneMap.pop(
+                        serverSha1File) + " from files to upload ... " + serverSha1File)
+                else:
+                    print("NO KEY:" + serverSha1File + " ... ")
+
+            nbItems = len(self.shaOneMap.items())
+            nb16Interval = nbItems // 16
+            print("nbItems: " + str(nbItems))
+            inc = nbItems // 90
+
+            if nbItems > 0:
+                for i in range(nb16Interval + 1):
+                    tmp_zip_files = os.path.join(tmp_zip_dir.name, 'files' + str(i) + '.zip')
+                    with zipfile.ZipFile(tmp_zip_files, 'w') as zip_archive:
+
+                        print("zip_archive: " + str(zip_archive))
+
+                        for j in range(16):
+                            if len(self.shaOneMap) > 0:
+                                progress += inc
+                                self.form.uploadProgress.setValue(progress)
+                                e_sha_one, filename = self.shaOneMap.popitem()
+                                zip_archive.write(filename, e_sha_one)
+
+                    try:
+                        with open(tmp_zip_files, 'rb') as file_tmp_zip_files:
+                            r = self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/uploadZip',
+                                                                  files={'proto.bin': file_tmp_zip_files}, data=data)
+                    finally:
+                        os.remove(tmp_zip_files)
+                    resp_bytes = BytesIO(r.content).read()
+                    resp_bucket = PlmBuf.Bucket()
+                    resp_bucket.ParseFromString(resp_bytes)
+                    if resp_bucket.status != PlmBuf.ServerStatus.OK_FILES:
+                        FreeCAD.Console.PrintWarning(translate("TaackPlm", resp_bucket.uploadError) + "\n")
+                        return None
+            uploaded = True
+
+        except requests.exceptions.ConnectionError as e:
+            FreeCAD.Console.PrintWarning(translate("TaackPlm", "Server seems to be disconnected ... ") + str(e) + "\n")
+            self.po.connected = False
         except Exception as e:
             FreeCAD.Console.PrintWarning(translate("TaackPlm", "Exception during upload ... ") + str(e) + "\n")
-            self.form.connectButton.setEnabled(True)
         finally:
+            try:
+                self.po.taackIntranetSession.post(url=self.po.url + 'plmProto/reset', data=data)
+            except requests.exceptions.RequestException as e:
+                FreeCAD.Console.PrintWarning(translate("TaackPlm", "Cannot reset the upload ... ") + str(e) + "\n")
             file_tmp_zip_proto.close()
             os.remove(tmp_zip_proto)
             tmp_zip_dir.cleanup()
+            self.form.uploadButton.setEnabled(True)
+            self.form.uploadButton.setText("Upload")
+            self.form.uploadProgress.setValue(100 if uploaded else 0)
+            self.form.uploadProgress.setFormat("Part Uploaded" if uploaded else "Part NOT Uploaded")
         return None
 
     def create_thumbnail(self, filename):
@@ -734,7 +731,7 @@ class TaackPlmTaskPanel(object):
 
         try:
             if obj.Name in self.avoidLoop:
-                return None
+                return obj.Name if obj.Name in bucket.plmFiles else None
 
             self.avoidLoop.add(obj.Name)
             plm_file = PlmBuf.PlmFile()
@@ -755,7 +752,7 @@ class TaackPlmTaskPanel(object):
             for l in linked_objects:
                 if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
                     lp = self.create_link_protobuf(l, bucket)
-                    if lp is not None:
+                    if lp is not None and lp not in plm_file.externalLink:
                         plm_file.externalLink.append(lp)
 
             # plm_file.fileContent = open(obj.FileName, 'rb').read()
@@ -811,7 +808,8 @@ class TaackPlmTaskPanel(object):
                 return None
 
             plm_link.plmFile = f
-            bucket.links[linked_doc.Name].CopyFrom(plm_link)
+            if linked_doc.Name not in bucket.links:
+                bucket.links[linked_doc.Name].CopyFrom(plm_link)
 
         except Exception as e:
             print("createLinkProtobuf Error: " + str(e))
