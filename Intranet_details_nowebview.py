@@ -32,7 +32,7 @@ class TaackPlmDetailsNoWebview(QtWidgets.QDialog):
         loader.load(ui_file)
         ui_file.close()
 
-        self.resize(720, 640)
+        self.resize(640, 480)
 
         buf = io.StringIO(html)
         prop = 0
@@ -49,17 +49,22 @@ class TaackPlmDetailsNoWebview(QtWidgets.QDialog):
                 elif prop == 3:
                     self.labelPartNameValue.setText(self.cleanProp(line))
                 elif prop == 4:
-                    self.labelFileDateValue.setText(self.cleanProp(line))
-                elif prop == 5:
-                    self.labelFileCreatedValue.setText(self.cleanProp(line))
-                elif prop == 6:
-                    self.labelStatusValue.setText(self.cleanProp(line))
-                elif prop == 7:
-                    self.labelLockedBy.setText(self.cleanProp(line))
-                elif prop == 8:
-                    self.labelTagsValue.setText(self.cleanProp(line))
-                elif prop == 9:
                     self.labelCommentValue.setText(self.cleanProp(line))
+                elif prop == 5:
+                    self.labelFileDateUpdatedValue.setText(self.cleanProp(line))
+                elif prop == 6:
+                    self.labelFileUserUpdatedValue.setText(self.cleanProp(line))
+                elif prop == 7:
+                    self.labelFileDateCreatedValue.setText(self.cleanProp(line))
+                elif prop == 8:
+                    self.labelFileUserCreatedValue.setText(self.cleanProp(line))
+                elif prop == 9:
+                    self.labelStatusValue.setText(self.cleanProp(line))
+                elif prop == 10:
+                    self.labelLockedByValue.setText(self.cleanProp(line))
+                elif prop == 11:
+                    self.labelTagsValue.setText(self.cleanProp(line))
+
                 prop += 1
             elif "data:image/png;base64, " in line:
                 i = line.index("data:image/png;base64, ") + len("data:image/png;base64, ")
@@ -70,6 +75,12 @@ class TaackPlmDetailsNoWebview(QtWidgets.QDialog):
                 # image = QImage.loadFromData(base64buf)
                 self.imageLabel.setPixmap(QPixmap.fromImage(image))
 
+        if ro:
+            self.btnApplyCheckIn.setEnabled(False)
+
+        self.btnApplyCheckIn.clicked.connect(self.checkIn)
+        self.btnApplyDlRO.clicked.connect(self.downloadReadOnly)
+        self.btnClose.clicked.connect(self.closing)
 
         self.show()
 
@@ -77,7 +88,7 @@ class TaackPlmDetailsNoWebview(QtWidgets.QDialog):
     def cleanProp(self, propHtml):
         propHtml = propHtml.strip()
         i = propHtml.index(">")
-        return propHtml[i:-7]
+        return propHtml[i + 1:-7]
 
     def checkIn(self):
         self.hasApplied = True
