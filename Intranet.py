@@ -734,7 +734,7 @@ class TaackPlmTaskPanel(object):
 
         try:
             if obj.Name in self.avoidLoop:
-                return None
+                return obj.Name if obj.Name in bucket.plmFiles else None
 
             self.avoidLoop.add(obj.Name)
             plm_file = PlmBuf.PlmFile()
@@ -755,7 +755,7 @@ class TaackPlmTaskPanel(object):
             for l in linked_objects:
                 if type(l) == FreeCAD.DocumentObject and l.TypeId == 'App::Link':
                     lp = self.create_link_protobuf(l, bucket)
-                    if lp is not None:
+                    if lp is not None and lp not in plm_file.externalLink:
                         plm_file.externalLink.append(lp)
 
             # plm_file.fileContent = open(obj.FileName, 'rb').read()
@@ -811,7 +811,8 @@ class TaackPlmTaskPanel(object):
                 return None
 
             plm_link.plmFile = f
-            bucket.links[linked_doc.Name].CopyFrom(plm_link)
+            if linked_doc.Name not in bucket.links:
+                bucket.links[linked_doc.Name].CopyFrom(plm_link)
 
         except Exception as e:
             print("createLinkProtobuf Error: " + str(e))
