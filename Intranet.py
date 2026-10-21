@@ -378,10 +378,11 @@ class TaackPlmTaskPanel(object):
                     freecad_file
                 )
 
+            doc_name = part.get('name') or part.get('label')
             try:
-                FreeCAD.closeDocument(part.get('label'))
+                FreeCAD.closeDocument(doc_name)
             except Exception as e:
-                print("Cannot close " + part.get('label') + ", " + str(e))
+                print("Cannot close " + str(doc_name) + ", " + str(e))
 
             FreeCAD.openDocument(freecad_file)
 
@@ -477,7 +478,6 @@ class TaackPlmTaskPanel(object):
                 # Prefer originalName for the visible text.
                 part_name = (
                         part.get("originalName") or
-                        part.get("name") or
                         part.get("label") or
                         str(part_id)
                 )
