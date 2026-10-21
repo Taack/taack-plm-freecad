@@ -26,7 +26,7 @@ class TaackPLMWorkbench (Workbench):
     def ContextMenu(self, recipient):
         '''This is executed whenever the user right-clicks on screen'''
         # 'recipient' will be either 'view' or 'tree'
-        self.appendContextMenu(self.__class__.MenuText, self.list) # add commands to the context menu
+        self.appendContextMenu(self.__class__.MenuText, self.cmds) # add commands to the context menu
 
     def GetClassName(self):
         return "Gui::PythonWorkbench"
