@@ -24,20 +24,23 @@ https://forum.freecad.org/viewtopic.php?t=75937
 
 ### Connect to the Server
 
-Under Freecad:
+Under FreeCAD:
 
-* Select the Taack PLM Workbench
+* Select the **Taack PLM** Workbench
 * Select a file you need to upload (if not already done, save it before)
-* Click on the **Taack** icon
+* Click on the **Taack** icon <img src="https://raw.githubusercontent.com/Taack/taack-plm-freecad/e9f2339747d1b647609ab3961963928a98bedd52/icons/logo_taack.svg" style="width: 20px;">
 
-The first time, you will be prompted for entering the server URL, along with your user credentials:
+![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/fc-connect-plm.webp)
 
-![enter credential](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/blender-taack-plm-addons2.webp)
-
-1. Server URL Input
-2. User Login Input
-3. User Password Input
-4. Path where model from the server will be put
+1. Workbench
+2. Taack PLM Icon
+3. Login tab
+4. Server URL
+5. Username
+6. Password
+7. Select a workspace directory
+8. Connect button
+9. Disconnect button
 
 Clicking on **Connect** Button.
 
@@ -61,15 +64,25 @@ All linked files will be uploaded. There are 3 situations from here, for each fi
 
 ### Search And Download Model from the Server
 
-![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/freecad-taack-plm-search-part2.webp)
+![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/fc-search-plm.webp)
 
 1. Search part tab
-2. New Table Result
-3. Model Preview
+2. Search button
+3. Filters, you should select `Top Assemblies`
+4. Model List, clicking here open the preview dialog
+5. Part Preview
+6. `Checkin` button: you will lock the file and nobody else will be able to edit it
+7. `Download Read Only` button: If the part is locked, you can download it, **this part could not be uploaded to the server**
+
+![downloaded](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/fc-download-only-plm.webp)
+
+1. Downloaded File
+2. Id == `READ_ONLY` if you clicked on `Download Read Only` button in the previous step
+3. You will be able to modify the model, but could not upload it.
 
 ### Duplicate Options
 
-![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/blender-taack-plm-addons2-duplicate.webp)
+![download](https://raw.githubusercontent.com/Taack/taack-plm-freecad/refs/heads/main/fc-duplicate-plm.webp)
 
 1. Duplicate Options
 
